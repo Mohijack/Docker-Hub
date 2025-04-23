@@ -205,6 +205,104 @@ class PortainerService {
     }
   }
 
+  // Get volumes for a stack
+  async getStackVolumes(stackId) {
+    try {
+      logger.info(`Getting volumes for stack: ${stackId}`);
+
+      const headers = await this.getAuthHeaders();
+
+      // Get endpoint ID
+      let endpointId = 1; // Default endpoint ID
+      try {
+        const endpointsResponse = await axios.get(`${this.baseURL}/api/endpoints`, { headers });
+        const localEndpoint = endpointsResponse.data.find(endpoint => endpoint.Name === 'local');
+        if (localEndpoint) {
+          endpointId = localEndpoint.Id;
+        } else if (endpointsResponse.data.length > 0) {
+          endpointId = endpointsResponse.data[0].Id;
+        }
+      } catch (error) {
+        logger.error('Failed to get endpoints:', error.message);
+      }
+
+      // Get stack details to find volume names
+      try {
+        const stackResponse = await axios.get(`${this.baseURL}/api/stacks/${stackId}?endpointId=${endpointId}`, { headers });
+        const stackName = stackResponse.data.Name;
+
+        // Get all volumes
+        const volumesResponse = await axios.get(`${this.baseURL}/api/endpoints/${endpointId}/docker/volumes`, { headers });
+
+        // Filter volumes that belong to this stack
+        // Volumes created by docker-compose typically have names like: stackname_volumename
+        const stackVolumes = volumesResponse.data.Volumes.filter(volume =>
+          volume.Name.startsWith(`${stackName}_`) ||
+          volume.Labels && volume.Labels['com.docker.compose.project'] === stackName
+        );
+
+        logger.info(`Found ${stackVolumes.length} volumes for stack ${stackName}`);
+        return stackVolumes;
+      } catch (error) {
+        if (error.response && error.response.status === 404) {
+          logger.warn(`Stack ${stackId} not found, cannot get volumes`);
+          return [];
+        }
+        throw error;
+      }
+    } catch (error) {
+      logger.error(`Failed to get volumes for stack ${stackId}:`, error.message);
+      return [];
+    }
+  }
+
+  // Delete volumes for a stack
+  async deleteStackVolumes(stackId) {
+    try {
+      const volumes = await this.getStackVolumes(stackId);
+      if (volumes.length === 0) {
+        logger.info(`No volumes found for stack ${stackId}`);
+        return true;
+      }
+
+      const headers = await this.getAuthHeaders();
+
+      // Get endpoint ID
+      let endpointId = 1; // Default endpoint ID
+      try {
+        const endpointsResponse = await axios.get(`${this.baseURL}/api/endpoints`, { headers });
+        const localEndpoint = endpointsResponse.data.find(endpoint => endpoint.Name === 'local');
+        if (localEndpoint) {
+          endpointId = localEndpoint.Id;
+        } else if (endpointsResponse.data.length > 0) {
+          endpointId = endpointsResponse.data[0].Id;
+        }
+      } catch (error) {
+        logger.error('Failed to get endpoints:', error.message);
+      }
+
+      // Delete each volume
+      for (const volume of volumes) {
+        try {
+          logger.info(`Deleting volume: ${volume.Name}`);
+          await axios.delete(`${this.baseURL}/api/endpoints/${endpointId}/docker/volumes/${volume.Name}`, { headers });
+          logger.info(`Volume ${volume.Name} deleted successfully`);
+        } catch (error) {
+          if (error.response && error.response.status === 404) {
+            logger.warn(`Volume ${volume.Name} not found, it may have been already deleted`);
+          } else {
+            logger.error(`Failed to delete volume ${volume.Name}:`, error.message);
+          }
+        }
+      }
+
+      return true;
+    } catch (error) {
+      logger.error(`Failed to delete volumes for stack ${stackId}:`, error.message);
+      return false;
+    }
+  }
+
   // Delete a stack
   async deleteStack(stackId) {
     try {
@@ -247,8 +345,10 @@ class PortainerService {
       }
 
       // Stack löschen mit der korrekten Methode für Portainer 2.27.4
+      // Füge den Parameter 'removeVolumes=true' hinzu, um auch die Volumes zu löschen
       logger.info(`Using endpoint ID: ${endpointId}`);
-      await axios.delete(`${this.baseURL}/api/stacks/${stackId}?endpointId=${endpointId}`, { headers });
+      logger.info('Deleting stack with associated volumes');
+      await axios.delete(`${this.baseURL}/api/stacks/${stackId}?endpointId=${endpointId}&removeVolumes=true`, { headers });
 
       logger.info(`Stack deleted: ${stackId}`);
       return true;

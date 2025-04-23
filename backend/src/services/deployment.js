@@ -243,9 +243,19 @@ class DeploymentService {
           throw new Error(`Portainer authentication failed: ${authError.message}`);
         }
 
-        // Delete stack
-        logger.info(`Deleting stack for booking ${bookingId}`);
+        // Delete stack and volumes
+        logger.info(`Deleting stack and volumes for booking ${bookingId}`);
         try {
+          // First try to delete volumes separately (as a fallback)
+          try {
+            await portainerService.deleteStackVolumes(booking.stackId);
+            logger.info(`Volumes for stack ${booking.stackId} deleted successfully`);
+          } catch (volumeError) {
+            logger.warn(`Failed to delete volumes separately: ${volumeError.message}`);
+            // Continue with stack deletion even if volume deletion fails
+          }
+
+          // Then delete the stack with removeVolumes=true parameter
           await portainerService.deleteStack(booking.stackId);
           logger.info(`Stack ${booking.stackId} deleted successfully`);
         } catch (deleteError) {
