@@ -31,10 +31,37 @@ if (!fs.existsSync(SERVICES_FILE)) {
       },
       composeTemplate: `version: '3'
 services:
-  web:
-    image: nginx:alpine
+  fe2_database:
+    image: mongo:4.4.29
     ports:
-      - "{{PORT}}:80"
+      - 27017
+    volumes:
+      - fe2_db_configdb:/data/configdb
+      - fe2_db_data:/data/db
+    restart: unless-stopped
+
+  fe2_app:
+    image: alamosgmbh/fe2:2.36.100
+    environment:
+      - FE2_EMAIL=admin@beyondfire.cloud
+      - FE2_PASSWORD=BeyondFire2024!
+      - FE2_ACTIVATION_NAME=fe2_{{UNIQUE_ID}}
+      - FE2_IP_MONGODB=fe2_database
+      - FE2_PORT_MONGODB=27017
+    ports:
+      - "{{PORT}}:83"
+    volumes:
+      - fe2_logs:/Logs
+      - fe2_config:/Config
+    restart: unless-stopped
+    depends_on:
+      - fe2_database
+
+volumes:
+  fe2_db_configdb:
+  fe2_db_data:
+  fe2_logs:
+  fe2_config:
 `
     }
   ];
@@ -212,10 +239,15 @@ class DockerServiceModel {
       .replace(/{{PORT}}/g, booking.port)
       .replace(/{{DOMAIN}}/g, booking.domain);
 
-    // No special handling needed for FE2 service anymore
+    // Special handling for FE2 service
     if (booking.serviceId === 'fe2-docker') {
-      // Just log that we're creating a simple service
-      logger.info(`Creating simple Nginx service for booking ${bookingId}`);
+      // Generate a unique ID for the FE2 instance
+      const uniqueId = booking.id.substring(0, 8);
+
+      // Replace FE2-specific placeholders
+      composeContent = composeContent.replace(/{{UNIQUE_ID}}/g, uniqueId);
+
+      logger.info(`Creating FE2 service for booking ${bookingId} with unique ID ${uniqueId}`);
     }
 
     return { success: true, composeContent };
