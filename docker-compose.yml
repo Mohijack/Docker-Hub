@@ -20,6 +20,7 @@ services:
       - SERVER_IP=${SERVER_IP}
     volumes:
       - beyondfire-logs:/app/logs
+      - beyondfire-data:/app/data
 
   beyondfire-cloud-frontend:
     build: ./frontend
@@ -33,4 +34,4 @@ services:
 
 volumes:
   beyondfire-logs:
-
+  beyondfire-data:
