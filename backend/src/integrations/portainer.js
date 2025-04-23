@@ -73,6 +73,31 @@ class PortainerService {
     }
   }
 
+  // Check if a stack with the given name already exists
+  async stackExists(name) {
+    try {
+      logger.info(`Checking if stack exists: ${name}`);
+
+      const headers = await this.getAuthHeaders();
+      const response = await axios.get(`${this.baseURL}/api/stacks`, { headers });
+
+      // Check if any stack has the same name
+      const existingStack = response.data.find(stack => stack.Name === name);
+
+      if (existingStack) {
+        logger.info(`Stack with name ${name} already exists with ID: ${existingStack.Id}`);
+        return true;
+      }
+
+      logger.info(`No stack found with name: ${name}`);
+      return false;
+    } catch (error) {
+      logger.error(`Failed to check if stack exists: ${name}`, error.message);
+      // If we can't check, assume it doesn't exist
+      return false;
+    }
+  }
+
   // Create a new stack
   async createStack(name, composeFileContent) {
     try {
@@ -80,6 +105,12 @@ class PortainerService {
 
       const headers = await this.getAuthHeaders();
       logger.info('Got authentication headers');
+
+      // Prüfen, ob ein Stack mit diesem Namen bereits existiert
+      const stackExists = await this.stackExists(name);
+      if (stackExists) {
+        throw new Error(`A stack with the name '${name}' already exists. Please choose a different name.`);
+      }
 
       // Prüfen, ob die Endpunkte erreichbar sind
       let endpointId = 1; // Standard-Endpunkt-ID

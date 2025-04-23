@@ -54,7 +54,7 @@ class DeploymentService {
       }
 
       // Deploy to Portainer
-      const stackName = `customer-${booking.userId.substring(0, 8)}-${booking.serviceId}`;
+      let stackName = `customer-${booking.userId.substring(0, 8)}-${booking.serviceId}`;
 
       // Authenticate with Portainer
       try {
@@ -64,6 +64,16 @@ class DeploymentService {
       } catch (authError) {
         logger.error('Failed to authenticate with Portainer:', authError.message);
         throw new Error(`Portainer authentication failed: ${authError.message}`);
+      }
+
+      // Check if a stack with this name already exists
+      const stackExists = await portainerService.stackExists(stackName);
+      if (stackExists) {
+        logger.warn(`A stack with the name '${stackName}' already exists. Generating a unique name.`);
+        // Append a random string to make the name unique
+        const uniqueSuffix = Math.random().toString(36).substring(2, 7);
+        stackName = `${stackName}-${uniqueSuffix}`;
+        logger.info(`Using unique stack name: ${stackName}`);
       }
 
       // Create stack
@@ -172,7 +182,7 @@ class DeploymentService {
       }
 
       // Deploy to Portainer
-      const stackName = `customer-${booking.userId.substring(0, 8)}-${booking.serviceId}`;
+      let stackName = `customer-${booking.userId.substring(0, 8)}-${booking.serviceId}`;
 
       // Authenticate with Portainer
       try {
@@ -182,6 +192,16 @@ class DeploymentService {
       } catch (authError) {
         logger.error('Failed to authenticate with Portainer:', authError.message);
         throw new Error(`Portainer authentication failed: ${authError.message}`);
+      }
+
+      // Check if a stack with this name already exists
+      const stackExists = await portainerService.stackExists(stackName);
+      if (stackExists) {
+        logger.warn(`A stack with the name '${stackName}' already exists. Generating a unique name.`);
+        // Append a random string to make the name unique
+        const uniqueSuffix = Math.random().toString(36).substring(2, 7);
+        stackName = `${stackName}-${uniqueSuffix}`;
+        logger.info(`Using unique stack name: ${stackName}`);
       }
 
       // Create stack
