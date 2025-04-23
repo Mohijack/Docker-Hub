@@ -1,5 +1,11 @@
 /* Bosch Security Theme - Inspired by https://www.boschsecurity.com/de/de/ */
 
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
 :root {
   --bosch-blue: #005691;
   --bosch-light-blue: #007bc0;
@@ -22,6 +28,43 @@ body {
   margin: 0;
   padding: 0;
   line-height: 1.5;
+}
+
+.App {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex: 1;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-size: 1.5rem;
+  color: var(--bosch-light-text);
+}
+
+.error-message {
+  background-color: #ffebee;
+  color: var(--bosch-red);
+  padding: 15px;
+  margin-bottom: 20px;
+  text-align: center;
+  border-left: 4px solid var(--bosch-red);
+}
+
+.success-message {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  padding: 15px;
+  margin-bottom: 20px;
+  text-align: center;
+  border-left: 4px solid #2e7d32;
 }
 
 /* Header Styles */
@@ -51,8 +94,12 @@ body {
 }
 
 .navbar-logo img {
-  height: 40px;
   margin-right: 10px;
+  display: block;
+}
+
+.navbar-logo span {
+  display: none; /* Hide the text next to the logo */
 }
 
 .navbar-menu {
@@ -83,6 +130,20 @@ body {
 
 .register-button:hover {
   background-color: #c5000f;
+}
+
+.logout-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--bosch-text);
+  font-weight: 500;
+  transition: color 0.3s;
+}
+
+.logout-button:hover {
+  color: var(--bosch-red);
 }
 
 /* Hero Section */
@@ -128,10 +189,16 @@ body {
   transition: background-color 0.3s;
   border: none;
   cursor: pointer;
+  text-align: center;
 }
 
 .btn-primary:hover {
   background-color: #c5000f;
+}
+
+.btn-primary:disabled {
+  background-color: #f5a5a5;
+  cursor: not-allowed;
 }
 
 .btn-secondary {
@@ -144,11 +211,33 @@ body {
   font-weight: 500;
   border: 1px solid var(--bosch-white);
   transition: background-color 0.3s, color 0.3s;
+  cursor: pointer;
+  text-align: center;
 }
 
 .btn-secondary:hover {
   background-color: var(--bosch-white);
   color: var(--bosch-blue);
+}
+
+/* Dark version of secondary button for non-hero sections */
+.btn-secondary-dark {
+  display: inline-block;
+  background-color: transparent;
+  color: var(--bosch-blue);
+  padding: 12px 24px;
+  border-radius: 0;
+  text-decoration: none;
+  font-weight: 500;
+  border: 1px solid var(--bosch-blue);
+  transition: background-color 0.3s, color 0.3s;
+  cursor: pointer;
+  text-align: center;
+}
+
+.btn-secondary-dark:hover {
+  background-color: var(--bosch-blue);
+  color: var(--bosch-white);
 }
 
 /* Features Section */
@@ -421,6 +510,79 @@ body {
   font-size: 14px;
 }
 
+/* Form Styles */
+.form-group {
+  margin-bottom: 25px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: var(--bosch-text);
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--bosch-border);
+  font-size: 16px;
+  transition: border-color 0.3s;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--bosch-blue);
+}
+
+.form-group small {
+  display: block;
+  margin-top: 5px;
+  color: var(--bosch-light-text);
+  font-size: 12px;
+}
+
+/* Auth Styles */
+.auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 80vh;
+  padding: 20px;
+}
+
+.auth-card {
+  background-color: var(--bosch-white);
+  border: 1px solid var(--bosch-border);
+  padding: 40px;
+  width: 100%;
+  max-width: 450px;
+}
+
+.auth-card h2 {
+  margin-bottom: 30px;
+  text-align: center;
+  color: var(--bosch-blue);
+  font-weight: 300;
+  font-size: 2rem;
+}
+
+.auth-link {
+  margin-top: 20px;
+  text-align: center;
+  color: var(--bosch-light-text);
+}
+
+.auth-link span {
+  color: var(--bosch-blue);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.auth-link span:hover {
+  color: var(--bosch-light-blue);
+}
+
 /* Dashboard Styles */
 .dashboard {
   max-width: 1200px;
@@ -471,6 +633,7 @@ body {
   border: 1px solid var(--bosch-border);
   padding: 30px;
   transition: transform 0.3s, box-shadow 0.3s;
+  border-left: 4px solid var(--bosch-blue);
 }
 
 .service-card:hover {
@@ -515,6 +678,20 @@ body {
   margin-bottom: 20px;
   color: var(--bosch-blue);
   font-weight: 500;
+  font-size: 1.5rem;
+}
+
+.booking-form .service-description {
+  color: var(--bosch-light-text);
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+
+.booking-form .service-price {
+  font-weight: bold;
+  color: var(--bosch-red);
+  font-size: 1.2rem;
+  margin-bottom: 30px;
 }
 
 .form-group {
@@ -557,6 +734,7 @@ body {
   display: flex;
   justify-content: space-between;
   margin-top: 30px;
+  gap: 20px;
 }
 
 /* Booking List Styles */
@@ -571,12 +749,18 @@ body {
   background-color: var(--bosch-blue);
   color: var(--bosch-white);
   font-weight: 500;
+  padding: 15px 0;
 }
 
 .booking-row {
   display: grid;
   grid-template-columns: 2fr 2fr 1fr 1fr;
   border-bottom: 1px solid var(--bosch-border);
+  transition: background-color 0.3s;
+}
+
+.booking-row:hover {
+  background-color: var(--bosch-gray);
 }
 
 .booking-cell {
@@ -617,31 +801,37 @@ body {
   font-size: 12px;
   font-weight: 500;
   text-transform: uppercase;
+  border-left: 3px solid transparent;
 }
 
 .status-active {
   background-color: #e8f5e9;
   color: #2e7d32;
+  border-left-color: #2e7d32;
 }
 
 .status-pending {
   background-color: #fff8e1;
   color: #f57f17;
+  border-left-color: #f57f17;
 }
 
 .status-deploying {
   background-color: #e3f2fd;
   color: var(--bosch-blue);
+  border-left-color: var(--bosch-blue);
 }
 
 .status-suspended {
   background-color: var(--bosch-gray);
   color: var(--bosch-dark-gray);
+  border-left-color: var(--bosch-dark-gray);
 }
 
 .status-failed {
   background-color: #ffebee;
   color: var(--bosch-red);
+  border-left-color: var(--bosch-red);
 }
 
 .btn-action {
@@ -653,6 +843,8 @@ body {
   cursor: pointer;
   font-size: 14px;
   transition: background-color 0.2s;
+  min-width: 100px;
+  text-align: center;
 }
 
 .btn-action:hover {
@@ -713,38 +905,38 @@ body {
     height: auto;
     padding: 20px;
   }
-  
+
   .navbar-menu {
     margin-top: 20px;
     flex-direction: column;
     align-items: center;
   }
-  
+
   .navbar-item {
     margin: 10px 0;
   }
-  
+
   .hero h1 {
     font-size: 2rem;
   }
-  
+
   .hero p {
     font-size: 1rem;
   }
-  
+
   .hero-buttons {
     flex-direction: column;
     gap: 15px;
   }
-  
+
   .booking-header, .booking-row {
     grid-template-columns: 1fr;
   }
-  
+
   .booking-header {
     display: none;
   }
-  
+
   .booking-cell:before {
     content: attr(data-label);
     font-weight: bold;

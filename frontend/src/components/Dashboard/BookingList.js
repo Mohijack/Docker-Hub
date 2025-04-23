@@ -102,7 +102,11 @@ function BookingList({ bookings, onDeploy, onSuspend, onResume }) {
             </div>
             <div className="booking-cell">
               <span className={`status-badge ${getStatusClass(booking.status)}`}>
-                {booking.status}
+                {booking.status === 'active' && 'Aktiv'}
+                {booking.status === 'pending' && 'Ausstehend'}
+                {booking.status === 'deploying' && 'Wird bereitgestellt'}
+                {booking.status === 'suspended' && 'Pausiert'}
+                {booking.status === 'failed' && 'Fehlgeschlagen'}
               </span>
             </div>
             <div className="booking-cell">

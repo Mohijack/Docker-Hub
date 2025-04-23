@@ -20,8 +20,8 @@ function Navbar({ user, onLogout }) {
     <nav className="navbar">
       <div className="navbar-container">
         <Link to="/" className="navbar-logo">
-          <img src="/logo.svg" alt="BeyondFire Cloud Logo" />
-          BeyondFire Cloud
+          <img src="/logo.svg" alt="BeyondFire Cloud Logo" width="200" height="40" />
+          <span>BeyondFire Cloud</span>
         </Link>
 
         <div className="navbar-menu">
