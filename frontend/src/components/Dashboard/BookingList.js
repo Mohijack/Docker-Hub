@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ServiceLogs from './ServiceLogs';
 
 function BookingList({ bookings, onDeploy, onSuspend, onResume, onDelete }) {
   const [loading, setLoading] = useState(false);
@@ -6,6 +7,18 @@ function BookingList({ bookings, onDeploy, onSuspend, onResume, onDelete }) {
   const [success, setSuccess] = useState('');
   const [actionBookingId, setActionBookingId] = useState(null);
   const [currentAction, setCurrentAction] = useState(null);
+  const [showLogs, setShowLogs] = useState(false);
+  const [selectedBookingId, setSelectedBookingId] = useState(null);
+
+  const handleShowLogs = (bookingId) => {
+    setSelectedBookingId(bookingId);
+    setShowLogs(true);
+  };
+
+  const handleCloseLogs = () => {
+    setShowLogs(false);
+    setSelectedBookingId(null);
+  };
 
   const handleAction = async (action, bookingId) => {
     setError('');
@@ -82,6 +95,14 @@ function BookingList({ bookings, onDeploy, onSuspend, onResume, onDelete }) {
     <div className="booking-list">
       {error && <div className="error-message">{error}</div>}
       {success && <div className="success-message">{success}</div>}
+
+      {/* Service Logs Modal */}
+      {showLogs && selectedBookingId && (
+        <ServiceLogs
+          bookingId={selectedBookingId}
+          onClose={handleCloseLogs}
+        />
+      )}
 
       <div className="booking-table">
         <div className="booking-header">
@@ -166,6 +187,16 @@ function BookingList({ bookings, onDeploy, onSuspend, onResume, onDelete }) {
                   disabled={loading && actionBookingId === booking.id}
                 >
                   {loading && actionBookingId === booking.id ? 'Wird wiederholt...' : 'Wiederholen'}
+                </button>
+              )}
+
+              {/* Logs-Button für aktive, fehlgeschlagene oder pausierte Dienste */}
+              {(booking.status === 'active' || booking.status === 'failed' || booking.status === 'suspended') && (
+                <button
+                  className="btn-action btn-logs"
+                  onClick={() => handleShowLogs(booking.id)}
+                >
+                  Logs
                 </button>
               )}
 

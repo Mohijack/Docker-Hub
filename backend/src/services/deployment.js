@@ -6,6 +6,7 @@ const cloudflareService = require('../integrations/cloudflare');
 const dockerServiceModel = require('../models/docker-service');
 const userModel = require('../models/user');
 const config = require('../utils/config');
+const directDeploymentService = require('./direct-deployment');
 
 // Path to bookings file
 const BOOKINGS_FILE = path.join(__dirname, '../../../data/bookings.json');
@@ -53,35 +54,54 @@ class DeploymentService {
         fs.mkdirSync(path.join(__dirname, '../../../data', `fe2_${booking.id}`, 'config', 'data'), { recursive: true });
       }
 
-      // Deploy to Portainer
+      // Try direct deployment first
+      let stackId = null;
       let stackName = `customer-${booking.userId.substring(0, 8)}-${booking.serviceId}`;
 
-      // Authenticate with Portainer
       try {
-        const token = await portainerService.authenticate();
-        logger.info('Successfully authenticated with Portainer');
-        logger.info(`JWT token received: ${token ? 'Yes' : 'No'}`);
-      } catch (authError) {
-        logger.error('Failed to authenticate with Portainer:', authError.message);
-        throw new Error(`Portainer authentication failed: ${authError.message}`);
+        logger.info('Attempting direct deployment...');
+        const directResult = await directDeploymentService.deployService(bookingId, composeContent);
+
+        if (directResult.success) {
+          logger.info('Direct deployment successful');
+          // Update booking status to deploying
+          dockerServiceModel.updateBookingStatus(bookingId, 'deploying');
+        } else {
+          logger.warn(`Direct deployment failed: ${directResult.message}`);
+          logger.info('Falling back to Portainer deployment...');
+
+          // Authenticate with Portainer
+          try {
+            const token = await portainerService.authenticate();
+            logger.info('Successfully authenticated with Portainer');
+            logger.info(`JWT token received: ${token ? 'Yes' : 'No'}`);
+          } catch (authError) {
+            logger.error('Failed to authenticate with Portainer:', authError.message);
+            throw new Error(`Portainer authentication failed: ${authError.message}`);
+          }
+
+          // Check if a stack with this name already exists
+          const stackExists = await portainerService.stackExists(stackName);
+          if (stackExists) {
+            logger.warn(`A stack with the name '${stackName}' already exists. Generating a unique name.`);
+            // Append a random string to make the name unique
+            const uniqueSuffix = Math.random().toString(36).substring(2, 7);
+            stackName = `${stackName}-${uniqueSuffix}`;
+            logger.info(`Using unique stack name: ${stackName}`);
+          }
+
+          // Create stack
+          logger.info(`Creating stack: ${stackName}`);
+          const stackResult = await portainerService.createStack(stackName, composeContent);
+          stackId = stackResult.Id;
+
+          // Update booking with stack ID
+          dockerServiceModel.updateBookingStatus(bookingId, 'deploying', stackId);
+        }
+      } catch (deployError) {
+        logger.error(`All deployment methods failed: ${deployError.message}`);
+        throw deployError;
       }
-
-      // Check if a stack with this name already exists
-      const stackExists = await portainerService.stackExists(stackName);
-      if (stackExists) {
-        logger.warn(`A stack with the name '${stackName}' already exists. Generating a unique name.`);
-        // Append a random string to make the name unique
-        const uniqueSuffix = Math.random().toString(36).substring(2, 7);
-        stackName = `${stackName}-${uniqueSuffix}`;
-        logger.info(`Using unique stack name: ${stackName}`);
-      }
-
-      // Create stack
-      logger.info(`Creating stack: ${stackName}`);
-      const stackResult = await portainerService.createStack(stackName, composeContent);
-
-      // Update booking with stack ID
-      dockerServiceModel.updateBookingStatus(bookingId, 'deploying', stackResult.Id);
 
       // Configure DNS if Cloudflare is enabled
       if (cloudflareService.isEnabled()) {
@@ -219,6 +239,45 @@ class DeploymentService {
     } catch (error) {
       logger.error(`Failed to resume service for booking ${bookingId}:`, error);
       return { success: false, message: `Resume failed: ${error.message}` };
+    }
+  }
+
+  // Get logs for a service
+  async getServiceLogs(bookingId) {
+    try {
+      // Get booking
+      const booking = dockerServiceModel.getBookingById(bookingId);
+      if (!booking) {
+        return { success: false, message: 'Booking not found', logs: [] };
+      }
+
+      // Get logs from direct deployment
+      const directLogs = await directDeploymentService.getServiceLogs(bookingId);
+
+      // Get logs from Portainer if stack ID exists
+      let portainerLogs = [];
+      if (booking.stackId) {
+        try {
+          portainerLogs = await portainerService.getStackLogs(booking.stackId);
+          portainerLogs = portainerLogs.map(log => ({
+            source: 'portainer',
+            message: log
+          }));
+        } catch (error) {
+          logger.error(`Failed to get Portainer logs for booking ${bookingId}:`, error.message);
+        }
+      }
+
+      // Combine logs and sort by timestamp (if available)
+      const allLogs = [...directLogs, ...portainerLogs];
+
+      return {
+        success: true,
+        logs: allLogs
+      };
+    } catch (error) {
+      logger.error(`Failed to get logs for booking ${bookingId}:`, error.message);
+      return { success: false, message: `Failed to get logs: ${error.message}`, logs: [] };
     }
   }
 

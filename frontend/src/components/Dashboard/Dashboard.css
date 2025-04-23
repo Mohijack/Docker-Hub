@@ -132,7 +132,7 @@
 
 .booking-header {
   display: grid;
-  grid-template-columns: 2fr 2fr 1fr 1fr;
+  grid-template-columns: 2fr 2fr 1fr 1fr 2fr;
   background-color: #f5f5f5;
   font-weight: bold;
   border-radius: 4px;
@@ -140,7 +140,7 @@
 
 .booking-row {
   display: grid;
-  grid-template-columns: 2fr 2fr 1fr 1fr;
+  grid-template-columns: 2fr 2fr 1fr 1fr 2fr;
   border-bottom: 1px solid #eee;
 }
 
@@ -237,6 +237,15 @@
   background-color: #f57c00;
 }
 
+.btn-logs {
+  background-color: #607d8b;
+  margin-right: 5px;
+}
+
+.btn-logs:hover {
+  background-color: #455a64;
+}
+
 .empty-state {
   text-align: center;
   padding: 30px;
@@ -309,22 +318,22 @@
   .booking-header, .booking-row {
     grid-template-columns: 1fr;
   }
-  
+
   .booking-header {
     display: none;
   }
-  
+
   .booking-cell {
     padding: 10px;
   }
-  
+
   .booking-cell:before {
     content: attr(data-label);
     font-weight: bold;
     display: block;
     margin-bottom: 5px;
   }
-  
+
   .service-grid {
     grid-template-columns: 1fr;
   }

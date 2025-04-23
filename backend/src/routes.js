@@ -152,17 +152,29 @@ router.get('/services/:id', async (req, res) => {
 // Book a service
 router.post('/bookings', authenticateToken, async (req, res) => {
   try {
-    const { serviceId, customDomain, customName } = req.body;
+    const { serviceId, customDomain, customName, licenseInfo } = req.body;
 
     if (!serviceId) {
       return res.status(400).json({ error: 'Service ID is required' });
+    }
+
+    // Check if service requires license information
+    const service = dockerServiceModel.getServiceById(serviceId);
+    if (service && serviceId === 'fe2-docker') {
+      if (!licenseInfo || !licenseInfo.email || !licenseInfo.password) {
+        return res.status(400).json({
+          error: 'Lizenzinformationen sind erforderlich für FE2',
+          requiredFields: ['licenseInfo.email', 'licenseInfo.password']
+        });
+      }
     }
 
     const result = dockerServiceModel.bookService(
       req.user.id,
       serviceId,
       customDomain,
-      customName
+      customName,
+      licenseInfo
     );
 
     if (!result.success) {
@@ -291,6 +303,33 @@ router.post('/bookings/:id/resume', authenticateToken, async (req, res) => {
     res.json({ message: 'Service resumed successfully' });
   } catch (error) {
     logger.error('Resume error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get service logs
+router.get('/bookings/:id/logs', authenticateToken, async (req, res) => {
+  try {
+    const booking = dockerServiceModel.getBookingById(req.params.id);
+
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+
+    // Check if booking belongs to user or user is admin
+    if (booking.userId !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const result = await deploymentService.getServiceLogs(req.params.id);
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.message });
+    }
+
+    res.json({ logs: result.logs });
+  } catch (error) {
+    logger.error('Logs error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

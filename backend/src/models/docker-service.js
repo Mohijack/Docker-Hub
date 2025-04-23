@@ -31,13 +31,46 @@ if (!fs.existsSync(SERVICES_FILE)) {
       },
       composeTemplate: `version: '3'
 services:
-  web:
+  fe2_database:
+    image: mongo:4.4.29
+    ports:
+      - 27017
+    volumes:
+      - fe2_db_data:/data/db
+    restart: unless-stopped
+
+  fe2_app:
+    image: alamosgmbh/fe2:2.36.100
+    environment:
+      - FE2_EMAIL={{FE2_EMAIL}}
+      - FE2_PASSWORD={{FE2_PASSWORD}}
+      - FE2_ACTIVATION_NAME=fe2_{{UNIQUE_ID}}
+      - FE2_IP_MONGODB=fe2_database
+      - FE2_PORT_MONGODB=27017
+    ports:
+      - 83
+    volumes:
+      - fe2_logs:/Logs
+      - fe2_config:/Config
+    restart: unless-stopped
+    depends_on:
+      - fe2_database
+
+  fe2_nginx:
     image: nginx:alpine
     ports:
       - "{{PORT}}:80"
-    volumes:
-      - ./html:/usr/share/nginx/html
+    environment:
+      - NGINX_HOST=localhost
+    command: sh -c "echo 'server { listen 80; location / { proxy_pass http://fe2_app:83; } }' > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
     restart: unless-stopped
+    depends_on:
+      - fe2_app
+
+volumes:
+  fe2_db_data:
+  fe2_logs:
+  fe2_config:
 `
     }
   ];
@@ -100,7 +133,7 @@ class DockerServiceModel {
   }
 
   // Book a service
-  bookService(userId, serviceId, customDomain, customName) {
+  bookService(userId, serviceId, customDomain, customName, licenseInfo = {}) {
     const service = this.getServiceById(serviceId);
     if (!service) {
       return { success: false, message: 'Service not found' };
@@ -132,6 +165,16 @@ class DockerServiceModel {
       }
     }
 
+    // Validate license information for FE2 service
+    if (serviceId === 'fe2-docker') {
+      if (!licenseInfo.email) {
+        return { success: false, message: 'FE2 E-Mail-Adresse ist erforderlich' };
+      }
+      if (!licenseInfo.password) {
+        return { success: false, message: 'FE2 Passwort ist erforderlich' };
+      }
+    }
+
     // Create booking
     const booking = {
       id: crypto.randomUUID(),
@@ -145,7 +188,11 @@ class DockerServiceModel {
       createdAt: new Date().toISOString(),
       expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
       stackId: null, // Will be set when deployed
-      dnsRecordId: null // Will be set when DNS is configured
+      dnsRecordId: null, // Will be set when DNS is configured
+      licenseInfo: serviceId === 'fe2-docker' ? {
+        email: licenseInfo.email,
+        password: licenseInfo.password
+      } : null
     };
 
     // Add booking
@@ -221,7 +268,10 @@ class DockerServiceModel {
       const uniqueId = booking.id.substring(0, 8);
 
       // Replace FE2-specific placeholders
-      composeContent = composeContent.replace(/{{UNIQUE_ID}}/g, uniqueId);
+      composeContent = composeContent
+        .replace(/{{UNIQUE_ID}}/g, uniqueId)
+        .replace(/{{FE2_EMAIL}}/g, booking.licenseInfo?.email || 'philipp.dasilva@e.bosch.com')
+        .replace(/{{FE2_PASSWORD}}/g, booking.licenseInfo?.password || 'PG1hQcUIDLxY');
 
       // Create HTML directory and file
       try {
