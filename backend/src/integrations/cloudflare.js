@@ -10,9 +10,26 @@ class CloudflareService {
       'Authorization': `Bearer ${config.cloudflare.apiToken}`,
       'Content-Type': 'application/json'
     };
+    this.enabled = false; // Temporarily disabled
   }
 
-  // Rest of the code remains the same
+  // Add a method to check if Cloudflare is enabled
+  isEnabled() {
+    return this.enabled && this.zoneId && config.cloudflare.apiToken;
+  }
+
+  // Modify other methods to check if enabled before making API calls
+  async createDNSRecord(name, content, type = 'A', proxied = true) {
+    if (!this.isEnabled()) {
+      logger.info('Cloudflare integration is disabled. Skipping DNS record creation.');
+      return { success: false, disabled: true };
+    }
+    
+    // Original implementation...
+  }
+
+  // Modify other methods similarly...
 }
 
 module.exports = new CloudflareService();
+

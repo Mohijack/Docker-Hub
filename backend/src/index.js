@@ -1,9 +1,11 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const path = require('path');
 const logger = require('./utils/logger');
 const routes = require('./routes');
 const config = require('./utils/config');
+const cloudflareService = require('./integrations/cloudflare');
 
 const app = express();
 const PORT = config.port;
@@ -19,8 +21,21 @@ app.use((req, res, next) => {
   next();
 });
 
-// Routes
+// Log Cloudflare status on startup
+if (!cloudflareService.isEnabled()) {
+  logger.info('Cloudflare integration is disabled');
+}
+
+// API Routes
 app.use('/api', routes);
+
+// Serve static frontend files
+app.use(express.static(path.join(__dirname, '../../frontend/build')));
+
+// For any other request, send the React app
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../../frontend/build/index.html'));
+});
 
 // Error handling
 app.use((err, req, res, next) => {
@@ -35,3 +50,5 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   logger.info(`Server running in ${config.nodeEnv} mode on port ${PORT}`);
 });
+
+

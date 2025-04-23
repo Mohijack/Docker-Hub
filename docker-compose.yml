@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  beyondfire-cloud-api:
+  beyondfire-cloud:
     build: .
     image: beyondfire-cloud-api:latest
     container_name: beyondfire-cloud-api
@@ -14,8 +14,8 @@ services:
       - PORTAINER_URL=${PORTAINER_URL}
       - PORTAINER_USERNAME=${PORTAINER_USERNAME}
       - PORTAINER_PASSWORD=${PORTAINER_PASSWORD}
-      - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}
-      - CLOUDFLARE_ZONE_ID=${CLOUDFLARE_ZONE_ID}
+      # - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}
+      # - CLOUDFLARE_ZONE_ID=${CLOUDFLARE_ZONE_ID}
       - JWT_SECRET=${JWT_SECRET}
       - SERVER_IP=${SERVER_IP}
     volumes:
@@ -33,3 +33,4 @@ services:
 
 volumes:
   beyondfire-logs:
+

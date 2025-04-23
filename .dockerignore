@@ -5,3 +5,6 @@ npm-debug.log
 .env.*
 logs
 *.md
+deploy-to-portainer.sh
+setup-project.ps1
+test-structure.ps1

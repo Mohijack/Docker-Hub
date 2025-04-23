@@ -16,8 +16,9 @@ module.exports = {
   },
   
   cloudflare: {
-    apiToken: process.env.CLOUDFLARE_API_TOKEN,
-    zoneId: process.env.CLOUDFLARE_ZONE_ID
+    // Temporarily disabled
+    apiToken: null, // process.env.CLOUDFLARE_API_TOKEN,
+    zoneId: null // process.env.CLOUDFLARE_ZONE_ID
   },
   
   jwt: {
