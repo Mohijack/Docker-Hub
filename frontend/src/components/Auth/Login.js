@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './Auth.css';
 
 function Login({ onLogin }) {
   const [email, setEmail] = useState('');
@@ -32,10 +31,10 @@ function Login({ onLogin }) {
       // Store token and user info
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
-      
+
       // Call the onLogin callback
       onLogin(data.user);
-      
+
       // Redirect to dashboard
       navigate('/dashboard');
     } catch (error) {
@@ -48,11 +47,11 @@ function Login({ onLogin }) {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h2>Login</h2>
+        <h2>Anmelden</h2>
         {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="email">E-Mail</label>
             <input
               type="email"
               id="email"
@@ -62,7 +61,7 @@ function Login({ onLogin }) {
             />
           </div>
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">Passwort</label>
             <input
               type="password"
               id="password"
@@ -72,12 +71,12 @@ function Login({ onLogin }) {
             />
           </div>
           <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? 'Anmeldung läuft...' : 'Anmelden'}
           </button>
         </form>
         <p className="auth-link">
-          Don't have an account?{' '}
-          <span onClick={() => navigate('/register')}>Register</span>
+          Noch kein Konto?{' '}
+          <span onClick={() => navigate('/register')}>Registrieren</span>
         </p>
       </div>
     </div>

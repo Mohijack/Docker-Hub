@@ -173,6 +173,39 @@
   font-weight: bold;
   color: #e74c3c;
   font-size: 1.1rem;
+  margin-bottom: 15px;
+}
+
+.fe2-preview {
+  background-color: #f5f9ff;
+  border-left: 4px solid #3498db;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.service-features {
+  margin-top: 20px;
+  text-align: left;
+}
+
+.service-features ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+.service-features li {
+  padding: 8px 0;
+  position: relative;
+  padding-left: 25px;
+  color: #555;
+}
+
+.service-features li:before {
+  content: '✓';
+  color: #3498db;
+  position: absolute;
+  left: 0;
+  font-weight: bold;
 }
 
 .services-cta {
@@ -237,16 +270,16 @@
   .hero h1 {
     font-size: 2rem;
   }
-  
+
   .hero p {
     font-size: 1rem;
   }
-  
+
   .hero-buttons {
     flex-direction: column;
     gap: 10px;
   }
-  
+
   .feature-grid, .services-grid, .steps {
     grid-template-columns: 1fr;
   }

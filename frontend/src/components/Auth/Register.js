@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './Auth.css';
 
 function Register() {
   const [formData, setFormData] = useState({
@@ -52,7 +51,7 @@ function Register() {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h2>Register</h2>
+        <h2>Registrieren</h2>
         {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
@@ -66,7 +65,7 @@ function Register() {
             />
           </div>
           <div className="form-group">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="email">E-Mail</label>
             <input
               type="email"
               id="email"
@@ -76,7 +75,7 @@ function Register() {
             />
           </div>
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">Passwort</label>
             <input
               type="password"
               id="password"
@@ -87,7 +86,7 @@ function Register() {
             />
           </div>
           <div className="form-group">
-            <label htmlFor="company">Company (Optional)</label>
+            <label htmlFor="company">Feuerwehr/Organisation (Optional)</label>
             <input
               type="text"
               id="company"
@@ -96,12 +95,12 @@ function Register() {
             />
           </div>
           <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? 'Registering...' : 'Register'}
+            {loading ? 'Registrierung läuft...' : 'Registrieren'}
           </button>
         </form>
         <p className="auth-link">
-          Already have an account?{' '}
-          <span onClick={() => navigate('/login')}>Login</span>
+          Bereits ein Konto?{' '}
+          <span onClick={() => navigate('/login')}>Anmelden</span>
         </p>
       </div>
     </div>

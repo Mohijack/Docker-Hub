@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import './Dashboard.css';
 
 function ServiceList({ services, onBook }) {
   const [selectedService, setSelectedService] = useState(null);
@@ -25,12 +24,12 @@ function ServiceList({ services, onBook }) {
 
     try {
       const result = await onBook(selectedService.id, customName, customDomain);
-      
+
       if (!result.success) {
         throw new Error(result.error);
       }
-      
-      setSuccess(`Successfully booked ${customName}!`);
+
+      setSuccess(`${customName} wurde erfolgreich gebucht!`);
       setSelectedService(null);
       setCustomName('');
       setCustomDomain('');
@@ -45,16 +44,16 @@ function ServiceList({ services, onBook }) {
     <div className="service-list">
       {error && <div className="error-message">{error}</div>}
       {success && <div className="success-message">{success}</div>}
-      
+
       {selectedService ? (
         <div className="booking-form">
-          <h3>Book {selectedService.name}</h3>
+          <h3>{selectedService.name} buchen</h3>
           <p className="service-description">{selectedService.description}</p>
-          <p className="service-price">${selectedService.price}/month</p>
-          
+          <p className="service-price">{selectedService.price} €/Monat</p>
+
           <form onSubmit={handleBookService}>
             <div className="form-group">
-              <label htmlFor="customName">Service Name</label>
+              <label htmlFor="customName">Dienstname</label>
               <input
                 type="text"
                 id="customName"
@@ -64,34 +63,34 @@ function ServiceList({ services, onBook }) {
               />
             </div>
             <div className="form-group">
-              <label htmlFor="customDomain">Custom Subdomain (Optional)</label>
+              <label htmlFor="customDomain">Benutzerdefinierte Subdomain (Optional)</label>
               <div className="domain-input">
                 <input
                   type="text"
                   id="customDomain"
                   value={customDomain}
                   onChange={(e) => setCustomDomain(e.target.value)}
-                  placeholder="myservice"
+                  placeholder="meine-feuerwehr"
                 />
                 <span className="domain-suffix">.beyondfire.cloud</span>
               </div>
-              <small>Leave empty for auto-generated subdomain</small>
+              <small>Leer lassen für automatisch generierte Subdomain</small>
             </div>
-            
+
             <div className="form-actions">
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="btn-secondary"
                 onClick={() => setSelectedService(null)}
               >
-                Cancel
+                Abbrechen
               </button>
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="btn-primary"
                 disabled={loading}
               >
-                {loading ? 'Booking...' : 'Book Now'}
+                {loading ? 'Wird gebucht...' : 'Jetzt buchen'}
               </button>
             </div>
           </form>
@@ -108,13 +107,13 @@ function ServiceList({ services, onBook }) {
                   <div>Memory: {service.resources.memory}</div>
                   <div>Storage: {service.resources.storage}</div>
                 </div>
-                <div className="service-price">${service.price}/month</div>
+                <div className="service-price">{service.price} €/Monat</div>
               </div>
-              <button 
-                className="btn-primary" 
+              <button
+                className="btn-primary"
                 onClick={() => handleSelectService(service)}
               >
-                Book Now
+                Jetzt buchen
               </button>
             </div>
           ))}

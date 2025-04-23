@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import './Dashboard.css';
 
 function BookingList({ bookings, onDeploy, onSuspend, onResume }) {
   const [loading, setLoading] = useState(false);
@@ -20,15 +19,15 @@ function BookingList({ bookings, onDeploy, onSuspend, onResume }) {
       switch (action) {
         case 'deploy':
           result = await onDeploy(bookingId);
-          successMessage = 'Deployment initiated successfully!';
+          successMessage = 'Bereitstellung erfolgreich gestartet!';
           break;
         case 'suspend':
           result = await onSuspend(bookingId);
-          successMessage = 'Service suspended successfully!';
+          successMessage = 'Dienst erfolgreich pausiert!';
           break;
         case 'resume':
           result = await onResume(bookingId);
-          successMessage = 'Service resumed successfully!';
+          successMessage = 'Dienst erfolgreich fortgesetzt!';
           break;
         default:
           throw new Error('Invalid action');
@@ -67,7 +66,7 @@ function BookingList({ bookings, onDeploy, onSuspend, onResume }) {
   if (bookings.length === 0) {
     return (
       <div className="empty-state">
-        <p>You don't have any services yet. Book a service to get started!</p>
+        <p>Sie haben noch keine Dienste. Buchen Sie einen Dienst, um zu beginnen!</p>
       </div>
     );
   }
@@ -79,10 +78,10 @@ function BookingList({ bookings, onDeploy, onSuspend, onResume }) {
 
       <div className="booking-table">
         <div className="booking-header">
-          <div className="booking-cell">Service</div>
+          <div className="booking-cell">Dienst</div>
           <div className="booking-cell">Domain</div>
           <div className="booking-cell">Status</div>
-          <div className="booking-cell">Actions</div>
+          <div className="booking-cell">Aktionen</div>
         </div>
 
         {bookings.map(booking => (
@@ -92,9 +91,9 @@ function BookingList({ bookings, onDeploy, onSuspend, onResume }) {
               <div className="service-type">{booking.serviceName}</div>
             </div>
             <div className="booking-cell">
-              <a 
-                href={`http://${booking.domain}`} 
-                target="_blank" 
+              <a
+                href={`http://${booking.domain}`}
+                target="_blank"
                 rel="noopener noreferrer"
                 className={booking.status === 'active' ? 'domain-link' : 'domain-link disabled'}
               >
@@ -113,7 +112,7 @@ function BookingList({ bookings, onDeploy, onSuspend, onResume }) {
                   onClick={() => handleAction('deploy', booking.id)}
                   disabled={loading && actionBookingId === booking.id}
                 >
-                  {loading && actionBookingId === booking.id ? 'Deploying...' : 'Deploy'}
+                  {loading && actionBookingId === booking.id ? 'Wird bereitgestellt...' : 'Bereitstellen'}
                 </button>
               )}
               {booking.status === 'active' && (
@@ -122,7 +121,7 @@ function BookingList({ bookings, onDeploy, onSuspend, onResume }) {
                   onClick={() => handleAction('suspend', booking.id)}
                   disabled={loading && actionBookingId === booking.id}
                 >
-                  {loading && actionBookingId === booking.id ? 'Suspending...' : 'Suspend'}
+                  {loading && actionBookingId === booking.id ? 'Wird pausiert...' : 'Pausieren'}
                 </button>
               )}
               {booking.status === 'suspended' && (
@@ -131,7 +130,7 @@ function BookingList({ bookings, onDeploy, onSuspend, onResume }) {
                   onClick={() => handleAction('resume', booking.id)}
                   disabled={loading && actionBookingId === booking.id}
                 >
-                  {loading && actionBookingId === booking.id ? 'Resuming...' : 'Resume'}
+                  {loading && actionBookingId === booking.id ? 'Wird fortgesetzt...' : 'Fortsetzen'}
                 </button>
               )}
               {booking.status === 'failed' && (
@@ -140,7 +139,7 @@ function BookingList({ bookings, onDeploy, onSuspend, onResume }) {
                   onClick={() => handleAction('deploy', booking.id)}
                   disabled={loading && actionBookingId === booking.id}
                 >
-                  {loading && actionBookingId === booking.id ? 'Retrying...' : 'Retry'}
+                  {loading && actionBookingId === booking.id ? 'Wird wiederholt...' : 'Wiederholen'}
                 </button>
               )}
             </div>
