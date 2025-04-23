@@ -78,6 +78,9 @@ function Login({ onLogin }) {
           Noch kein Konto?{' '}
           <span onClick={() => navigate('/register')}>Registrieren</span>
         </p>
+        <div className="admin-info">
+          <p>Admin-Zugang: <strong>admin@beyondfire.cloud</strong> / <strong>AdminPW!</strong></p>
+        </div>
       </div>
     </div>
   );

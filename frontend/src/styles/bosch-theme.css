@@ -147,16 +147,25 @@ body {
 }
 
 .admin-button {
-  background-color: var(--bosch-blue);
+  background-color: var(--bosch-red);
   color: var(--bosch-white) !important;
   padding: 8px 16px;
   border-radius: 0;
   transition: background-color 0.3s;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
 }
 
 .admin-button:hover {
-  background-color: var(--bosch-dark-blue);
+  background-color: #c5000f;
   color: var(--bosch-white) !important;
+}
+
+.admin-button::before {
+  content: '⚙️';
+  margin-right: 5px;
+  font-size: 16px;
 }
 
 /* Hero Section */
@@ -594,6 +603,24 @@ body {
 
 .auth-link span:hover {
   color: var(--bosch-light-blue);
+}
+
+.admin-info {
+  margin-top: 20px;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-left: 4px solid var(--bosch-red);
+  font-size: 14px;
+  text-align: center;
+}
+
+.admin-info p {
+  margin: 0;
+  color: #666;
+}
+
+.admin-info strong {
+  color: var(--bosch-red);
 }
 
 /* Dashboard Styles */

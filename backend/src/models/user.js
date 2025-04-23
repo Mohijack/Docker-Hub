@@ -23,6 +23,39 @@ if (!fs.existsSync(USERS_FILE)) {
 class UserModel {
   constructor() {
     this.users = this.loadUsers();
+    this.ensureDefaultAdmin();
+  }
+
+  // Ensure default admin user exists
+  ensureDefaultAdmin() {
+    const adminEmail = 'admin@beyondfire.cloud';
+    const adminUser = this.users.find(user => user.email === adminEmail);
+
+    if (!adminUser) {
+      logger.info('Creating default admin user');
+
+      // Hash password
+      const { hash, salt } = this.hashPassword('AdminPW!');
+
+      // Create admin user
+      const admin = {
+        id: crypto.randomUUID(),
+        email: adminEmail,
+        name: 'Admin',
+        company: 'BeyondFire Cloud',
+        passwordHash: hash,
+        passwordSalt: salt,
+        role: 'admin',
+        createdAt: new Date().toISOString(),
+        services: []
+      };
+
+      // Add admin to users array
+      this.users.push(admin);
+      this.saveUsers();
+
+      logger.info('Default admin user created');
+    }
   }
 
   loadUsers() {
@@ -73,7 +106,7 @@ class UserModel {
       company,
       passwordHash: hash,
       passwordSalt: salt,
-      role: 'customer',
+      role: 'user',
       createdAt: new Date().toISOString(),
       services: []
     };
