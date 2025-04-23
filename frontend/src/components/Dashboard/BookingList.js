@@ -80,6 +80,7 @@ function BookingList({ bookings, onDeploy, onSuspend, onResume }) {
         <div className="booking-header">
           <div className="booking-cell">Dienst</div>
           <div className="booking-cell">Domain</div>
+          <div className="booking-cell">Port</div>
           <div className="booking-cell">Status</div>
           <div className="booking-cell">Aktionen</div>
         </div>
@@ -99,6 +100,20 @@ function BookingList({ bookings, onDeploy, onSuspend, onResume }) {
               >
                 {booking.domain}
               </a>
+            </div>
+            <div className="booking-cell">
+              <span className="port-number">{booking.port}</span>
+              {booking.status === 'active' && (
+                <a
+                  href={`http://192.168.200.170:${booking.port}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="port-link"
+                  title="Direkt über IP und Port zugreifen"
+                >
+                  <span className="port-link-icon">↗</span>
+                </a>
+              )}
             </div>
             <div className="booking-cell">
               <span className={`status-badge ${getStatusClass(booking.status)}`}>

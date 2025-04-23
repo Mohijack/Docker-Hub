@@ -584,6 +584,35 @@ body {
 }
 
 /* Dashboard Styles */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.refresh-button {
+  background-color: var(--bosch-blue);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
+
+.refresh-button:hover {
+  background-color: var(--bosch-dark-blue);
+}
+
+.refresh-icon {
+  margin-right: 8px;
+  font-size: 16px;
+  display: inline-block;
+}
 .dashboard {
   max-width: 1200px;
   margin: 0 auto;
@@ -663,6 +692,35 @@ body {
 .service-resources {
   font-size: 14px;
   color: var(--bosch-light-text);
+}
+
+/* Port Number Styles */
+.port-number {
+  font-weight: bold;
+  color: var(--bosch-blue);
+  background-color: var(--bosch-gray);
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-right: 8px;
+}
+
+.port-link {
+  color: var(--bosch-light-blue);
+  text-decoration: none;
+  margin-left: 5px;
+}
+
+.port-link-icon {
+  font-size: 16px;
+  display: inline-block;
+  background-color: var(--bosch-light-blue);
+  color: white;
+  width: 24px;
+  height: 24px;
+  text-align: center;
+  line-height: 24px;
+  border-radius: 50%;
 }
 
 /* Booking Form Styles */

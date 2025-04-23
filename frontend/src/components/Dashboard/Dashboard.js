@@ -10,6 +10,44 @@ function Dashboard({ user }) {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  // Funktion zum Abrufen der Daten
+  const fetchData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+
+      // Fetch available services
+      const servicesResponse = await fetch('/api/services');
+      const servicesData = await servicesResponse.json();
+
+      if (!servicesResponse.ok) {
+        throw new Error(servicesData.error || 'Failed to fetch services');
+      }
+
+      setServices(servicesData.services);
+
+      // Fetch user bookings
+      const bookingsResponse = await fetch('/api/bookings', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const bookingsData = await bookingsResponse.json();
+
+      if (!bookingsResponse.ok) {
+        throw new Error(bookingsData.error || 'Failed to fetch bookings');
+      }
+
+      setBookings(bookingsData.bookings);
+      console.log('Bookings updated:', bookingsData.bookings);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initialer Aufruf beim Laden der Komponente
   useEffect(() => {
     // Redirect if not logged in
     if (!user) {
@@ -17,43 +55,16 @@ function Dashboard({ user }) {
       return;
     }
 
-    // Fetch services and bookings
-    const fetchData = async () => {
-      try {
-        const token = localStorage.getItem('token');
-
-        // Fetch available services
-        const servicesResponse = await fetch('/api/services');
-        const servicesData = await servicesResponse.json();
-
-        if (!servicesResponse.ok) {
-          throw new Error(servicesData.error || 'Failed to fetch services');
-        }
-
-        setServices(servicesData.services);
-
-        // Fetch user bookings
-        const bookingsResponse = await fetch('/api/bookings', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        const bookingsData = await bookingsResponse.json();
-
-        if (!bookingsResponse.ok) {
-          throw new Error(bookingsData.error || 'Failed to fetch bookings');
-        }
-
-        setBookings(bookingsData.bookings);
-      } catch (error) {
-        setError(error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
+
+    // Automatische Aktualisierung alle 10 Sekunden
+    const intervalId = setInterval(() => {
+      console.log('Auto-refreshing dashboard...');
+      fetchData();
+    }, 10000);
+
+    // Aufräumen beim Unmounten der Komponente
+    return () => clearInterval(intervalId);
   }, [user, navigate]);
 
   const handleBookService = async (serviceId, customName, customDomain) => {
@@ -185,8 +196,13 @@ function Dashboard({ user }) {
   return (
     <div className="dashboard">
       <div className="dashboard-header">
-        <h1>Willkommen, {user.name}</h1>
-        <p>Verwalten Sie Ihre FE2-Dienste</p>
+        <div className="dashboard-title">
+          <h1>Willkommen, {user.name}</h1>
+          <p>Verwalten Sie Ihre FE2-Dienste</p>
+        </div>
+        <button className="refresh-button" onClick={fetchData} title="Dashboard aktualisieren">
+          <span className="refresh-icon">&#x21bb;</span> Aktualisieren
+        </button>
       </div>
 
       {error && <div className="error-message">{error}</div>}
