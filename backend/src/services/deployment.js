@@ -245,7 +245,18 @@ class DeploymentService {
 
         // Delete stack
         logger.info(`Deleting stack for booking ${bookingId}`);
-        await portainerService.deleteStack(booking.stackId);
+        try {
+          await portainerService.deleteStack(booking.stackId);
+          logger.info(`Stack ${booking.stackId} deleted successfully`);
+        } catch (deleteError) {
+          // If the stack is not found (404), consider it already deleted
+          if (deleteError.message.includes('status code 404')) {
+            logger.warn(`Stack ${booking.stackId} not found in Portainer, considering it already deleted`);
+          } else {
+            // For other errors, rethrow
+            throw deleteError;
+          }
+        }
       }
 
       // Delete DNS record if exists

@@ -233,6 +233,19 @@ class PortainerService {
         logger.info(`Using default endpoint ID: ${endpointId}`);
       }
 
+      // Check if stack exists before deleting
+      try {
+        await axios.get(`${this.baseURL}/api/stacks/${stackId}?endpointId=${endpointId}`, { headers });
+        logger.info(`Stack ${stackId} exists, proceeding with deletion`);
+      } catch (checkError) {
+        if (checkError.response && checkError.response.status === 404) {
+          logger.warn(`Stack ${stackId} not found, it may have been already deleted`);
+          return true; // Consider it successfully deleted if it doesn't exist
+        }
+        // For other errors, continue with deletion attempt
+        logger.warn(`Error checking stack existence: ${checkError.message}`);
+      }
+
       // Stack löschen mit der korrekten Methode für Portainer 2.27.4
       logger.info(`Using endpoint ID: ${endpointId}`);
       await axios.delete(`${this.baseURL}/api/stacks/${stackId}?endpointId=${endpointId}`, { headers });
