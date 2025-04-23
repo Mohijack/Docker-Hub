@@ -31,37 +31,13 @@ if (!fs.existsSync(SERVICES_FILE)) {
       },
       composeTemplate: `version: '3'
 services:
-  fe2_database:
-    image: mongo:4.4.29
+  web:
+    image: nginx:alpine
     ports:
-      - 27017
+      - "{{PORT}}:80"
     volumes:
-      - fe2_db_configdb:/data/configdb
-      - fe2_db_data:/data/db
+      - ./html:/usr/share/nginx/html
     restart: unless-stopped
-
-  fe2_app:
-    image: alamosgmbh/fe2:2.36.100
-    environment:
-      - FE2_EMAIL=admin@beyondfire.cloud
-      - FE2_PASSWORD=BeyondFire2024!
-      - FE2_ACTIVATION_NAME=fe2_{{UNIQUE_ID}}
-      - FE2_IP_MONGODB=fe2_database
-      - FE2_PORT_MONGODB=27017
-    ports:
-      - "{{PORT}}:83"
-    volumes:
-      - fe2_logs:/Logs
-      - fe2_config:/Config
-    restart: unless-stopped
-    depends_on:
-      - fe2_database
-
-volumes:
-  fe2_db_configdb:
-  fe2_db_data:
-  fe2_logs:
-  fe2_config:
 `
     }
   ];
@@ -246,6 +222,139 @@ class DockerServiceModel {
 
       // Replace FE2-specific placeholders
       composeContent = composeContent.replace(/{{UNIQUE_ID}}/g, uniqueId);
+
+      // Create HTML directory and file
+      try {
+        const htmlDir = './html';
+        if (!fs.existsSync(htmlDir)) {
+          fs.mkdirSync(htmlDir, { recursive: true });
+        }
+
+        // Create a custom HTML file that looks like FE2
+        const htmlContent = `
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FE2 - Feuerwehr Einsatzleitsystem</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+        .header {
+            background-color: #c00000;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .content {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            min-height: 500px;
+        }
+        .info-box {
+            background-color: #e6f7ff;
+            border-left: 4px solid #1890ff;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .service-info {
+            margin-top: 30px;
+            border: 1px solid #ddd;
+            padding: 20px;
+        }
+        .service-info h2 {
+            margin-top: 0;
+            color: #c00000;
+        }
+        .service-info table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .service-info table th, .service-info table td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+        .service-info table th {
+            background-color: #f5f5f5;
+        }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">FE2 - Feuerwehr Einsatzleitsystem</div>
+        <div>BeyondFire Cloud</div>
+    </div>
+
+    <div class="content">
+        <div class="info-box">
+            <p><strong>Hinweis:</strong> Dies ist eine Platzhalterseite für das FE2-Einsatzleitsystem. Das tatsächliche FE2-System konnte nicht korrekt bereitgestellt werden.</p>
+        </div>
+
+        <div class="service-info">
+            <h2>Service-Informationen</h2>
+            <table>
+                <tr>
+                    <th>Service-ID</th>
+                    <td>${booking.serviceId}</td>
+                </tr>
+                <tr>
+                    <th>Name</th>
+                    <td>${booking.customName}</td>
+                </tr>
+                <tr>
+                    <th>Domain</th>
+                    <td>${booking.domain}</td>
+                </tr>
+                <tr>
+                    <th>Port</th>
+                    <td>${booking.port}</td>
+                </tr>
+                <tr>
+                    <th>Status</th>
+                    <td>Aktiv</td>
+                </tr>
+                <tr>
+                    <th>Erstellt am</th>
+                    <td>${new Date(booking.createdAt).toLocaleString()}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>&copy; ${new Date().getFullYear()} BeyondFire Cloud - FE2 Einsatzleitsystem</p>
+    </div>
+</body>
+</html>
+`;
+
+        // Write the HTML file
+        fs.writeFileSync(`${htmlDir}/index.html`, htmlContent);
+        logger.info(`Created custom HTML file for booking ${bookingId}`);
+      } catch (error) {
+        logger.error(`Failed to create HTML file for booking ${bookingId}:`, error);
+      }
 
       logger.info(`Creating FE2 service for booking ${bookingId} with unique ID ${uniqueId}`);
     }
