@@ -102,12 +102,12 @@ class UserModel {
 
     // Generate JWT token
     const token = jwt.sign(
-      { 
-        id: user.id, 
-        email: user.email, 
-        role: user.role 
-      }, 
-      config.jwt.secret, 
+      {
+        id: user.id,
+        email: user.email,
+        role: user.role
+      },
+      config.jwt.secret,
       { expiresIn: config.jwt.expiresIn }
     );
 
@@ -171,6 +171,22 @@ class UserModel {
     if (!user) return { success: false, message: 'User not found' };
 
     return { success: true, services: user.services };
+  }
+
+  // Remove service from user
+  removeServiceFromUser(userId, serviceId) {
+    const index = this.users.findIndex(user => user.id === userId);
+    if (index === -1) return { success: false, message: 'User not found' };
+
+    // Find service index
+    const serviceIndex = this.users[index].services.findIndex(service => service.id === serviceId);
+    if (serviceIndex === -1) return { success: false, message: 'Service not found' };
+
+    // Remove service
+    this.users[index].services.splice(serviceIndex, 1);
+    this.saveUsers();
+
+    return { success: true, services: this.users[index].services };
   }
 }
 

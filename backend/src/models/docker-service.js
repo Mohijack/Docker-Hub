@@ -179,6 +179,22 @@ class DockerServiceModel {
     return { success: true, booking: this.bookings[index] };
   }
 
+  // Delete booking
+  deleteBooking(id) {
+    const index = this.bookings.findIndex(booking => booking.id === id);
+    if (index === -1) {
+      return { success: false, message: 'Booking not found' };
+    }
+
+    // Remove booking from array
+    this.bookings.splice(index, 1);
+
+    // Save updated bookings
+    this.saveBookings();
+
+    return { success: true, message: 'Booking deleted successfully' };
+  }
+
   // Generate docker-compose file for a booking
   generateComposeFile(bookingId) {
     const booking = this.getBookingById(bookingId);

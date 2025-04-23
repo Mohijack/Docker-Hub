@@ -253,10 +253,22 @@ class DeploymentService {
         await cloudflareService.deleteDNSRecord(booking.dnsRecordId);
       }
 
-      // Remove booking
-      const bookings = dockerServiceModel.loadBookings();
-      const updatedBookings = bookings.filter(b => b.id !== bookingId);
-      fs.writeFileSync(BOOKINGS_FILE, JSON.stringify(updatedBookings, null, 2));
+      // Remove service from user
+      const removeServiceResult = userModel.removeServiceFromUser(booking.userId, bookingId);
+      if (!removeServiceResult.success) {
+        logger.warn(`Failed to remove service from user: ${removeServiceResult.message}`);
+        // Continue with deletion even if removing from user fails
+      } else {
+        logger.info(`Service removed from user ${booking.userId}`);
+      }
+
+      // Remove booking using the model method
+      const deleteResult = dockerServiceModel.deleteBooking(bookingId);
+      if (!deleteResult.success) {
+        logger.error(`Failed to delete booking ${bookingId}:`, deleteResult.message);
+        throw new Error(deleteResult.message);
+      }
+      logger.info(`Booking ${bookingId} deleted successfully`);
 
       return { success: true, message: 'Service deleted successfully' };
     } catch (error) {
