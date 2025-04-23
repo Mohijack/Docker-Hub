@@ -58,8 +58,9 @@ class DeploymentService {
 
       // Authenticate with Portainer
       try {
-        await portainerService.authenticate();
+        const token = await portainerService.authenticate();
         logger.info('Successfully authenticated with Portainer');
+        logger.info(`JWT token received: ${token ? 'Yes' : 'No'}`);
       } catch (authError) {
         logger.error('Failed to authenticate with Portainer:', authError.message);
         throw new Error(`Portainer authentication failed: ${authError.message}`);
@@ -133,8 +134,9 @@ class DeploymentService {
 
       // Authenticate with Portainer
       try {
-        await portainerService.authenticate();
+        const token = await portainerService.authenticate();
         logger.info('Successfully authenticated with Portainer');
+        logger.info(`JWT token received: ${token ? 'Yes' : 'No'}`);
       } catch (authError) {
         logger.error('Failed to authenticate with Portainer:', authError.message);
         throw new Error(`Portainer authentication failed: ${authError.message}`);
@@ -174,8 +176,9 @@ class DeploymentService {
 
       // Authenticate with Portainer
       try {
-        await portainerService.authenticate();
+        const token = await portainerService.authenticate();
         logger.info('Successfully authenticated with Portainer');
+        logger.info(`JWT token received: ${token ? 'Yes' : 'No'}`);
       } catch (authError) {
         logger.error('Failed to authenticate with Portainer:', authError.message);
         throw new Error(`Portainer authentication failed: ${authError.message}`);
@@ -212,8 +215,9 @@ class DeploymentService {
       if (booking.stackId) {
         // Authenticate with Portainer
         try {
-          await portainerService.authenticate();
+          const token = await portainerService.authenticate();
           logger.info('Successfully authenticated with Portainer');
+          logger.info(`JWT token received: ${token ? 'Yes' : 'No'}`);
         } catch (authError) {
           logger.error('Failed to authenticate with Portainer:', authError.message);
           throw new Error(`Portainer authentication failed: ${authError.message}`);

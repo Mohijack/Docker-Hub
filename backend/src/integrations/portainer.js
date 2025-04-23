@@ -18,44 +18,18 @@ class PortainerService {
       logger.info(`Authenticating with Portainer at ${this.baseURL}`);
       logger.info(`Using username: ${config.portainer.username}`);
 
-      // Versuche verschiedene Formate für die Authentifizierungsanfrage
-      let response;
-      try {
-        // Format 1: Standard JSON (lowercase)
-        response = await axios.post(`${this.baseURL}/api/auth`, {
-          username: config.portainer.username,
-          password: config.portainer.password
-        });
-      } catch (err1) {
-        logger.error('First authentication attempt failed:', err1.message);
-
-        try {
-          // Format 2: Camel Case
-          response = await axios.post(`${this.baseURL}/api/auth`, {
-            Username: config.portainer.username,
-            Password: config.portainer.password
-          });
-        } catch (err2) {
-          logger.error('Second authentication attempt failed:', err2.message);
-
-          // Format 3: Form Data
-          const formData = new URLSearchParams();
-          formData.append('username', config.portainer.username);
-          formData.append('password', config.portainer.password);
-
-          response = await axios.post(`${this.baseURL}/api/auth`, formData, {
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded'
-            }
-          });
-        }
-      }
+      // Direkte Authentifizierung mit dem Standard-JSON-Format (lowercase)
+      // Dies funktioniert mit Portainer 2.27.4
+      const response = await axios.post(`${this.baseURL}/api/auth`, {
+        username: config.portainer.username,
+        password: config.portainer.password
+      });
 
       this.token = response.data.jwt;
       logger.info('Portainer authentication successful');
       return this.token;
     } catch (error) {
-      logger.error('All Portainer authentication attempts failed:', error.message);
+      logger.error('Portainer authentication failed:', error.message);
       if (error.response) {
         logger.error(`Status: ${error.response.status}`);
         logger.error(`Data: ${JSON.stringify(error.response.data)}`);
@@ -102,47 +76,90 @@ class PortainerService {
   // Create a new stack
   async createStack(name, composeFileContent) {
     try {
+      logger.info(`Creating stack: ${name}`);
+
       const headers = await this.getAuthHeaders();
+      logger.info('Got authentication headers');
+
+      // Prüfen, ob die Endpunkte erreichbar sind
+      try {
+        const endpointsResponse = await axios.get(`${this.baseURL}/api/endpoints`, { headers });
+        logger.info(`Found ${endpointsResponse.data.length || 0} endpoints`);
+      } catch (endpointsError) {
+        logger.error('Failed to get endpoints:', endpointsError.message);
+      }
+
+      // Stack erstellen
       const response = await axios.post(`${this.baseURL}/api/stacks`, {
         name,
-        stackFileContent: composeFileContent
+        stackFileContent: composeFileContent,
+        // Für Portainer 2.x müssen wir den Endpunkt angeben
+        endpointId: 1 // Standard-Endpunkt-ID
       }, { headers });
 
       logger.info(`Stack created: ${name}`);
       return response.data;
     } catch (error) {
       logger.error(`Failed to create stack ${name}:`, error.message);
-      throw new Error(`Failed to create Portainer stack ${name}`);
+      if (error.response) {
+        logger.error(`Status: ${error.response.status}`);
+        logger.error(`Data: ${JSON.stringify(error.response.data)}`);
+      }
+      throw new Error(`Failed to create Portainer stack ${name}: ${error.message}`);
     }
   }
 
   // Update an existing stack
   async updateStack(stackId, composeFileContent) {
     try {
+      logger.info(`Updating stack: ${stackId}`);
+
       const headers = await this.getAuthHeaders();
+      logger.info('Got authentication headers');
+
       const response = await axios.put(`${this.baseURL}/api/stacks/${stackId}`, {
-        stackFileContent: composeFileContent
+        stackFileContent: composeFileContent,
+        // Für Portainer 2.x müssen wir den Endpunkt angeben
+        endpointId: 1 // Standard-Endpunkt-ID
       }, { headers });
 
       logger.info(`Stack updated: ${stackId}`);
       return response.data;
     } catch (error) {
       logger.error(`Failed to update stack ${stackId}:`, error.message);
-      throw new Error(`Failed to update Portainer stack ${stackId}`);
+      if (error.response) {
+        logger.error(`Status: ${error.response.status}`);
+        logger.error(`Data: ${JSON.stringify(error.response.data)}`);
+      }
+      throw new Error(`Failed to update Portainer stack ${stackId}: ${error.message}`);
     }
   }
 
   // Delete a stack
   async deleteStack(stackId) {
     try {
+      logger.info(`Deleting stack: ${stackId}`);
+
       const headers = await this.getAuthHeaders();
-      await axios.delete(`${this.baseURL}/api/stacks/${stackId}`, { headers });
+      logger.info('Got authentication headers');
+
+      // Für Portainer 2.x müssen wir den Endpunkt angeben
+      await axios.delete(`${this.baseURL}/api/stacks/${stackId}`, {
+        headers,
+        params: {
+          endpointId: 1 // Standard-Endpunkt-ID
+        }
+      });
 
       logger.info(`Stack deleted: ${stackId}`);
       return true;
     } catch (error) {
       logger.error(`Failed to delete stack ${stackId}:`, error.message);
-      throw new Error(`Failed to delete Portainer stack ${stackId}`);
+      if (error.response) {
+        logger.error(`Status: ${error.response.status}`);
+        logger.error(`Data: ${JSON.stringify(error.response.data)}`);
+      }
+      throw new Error(`Failed to delete Portainer stack ${stackId}: ${error.message}`);
     }
   }
 }

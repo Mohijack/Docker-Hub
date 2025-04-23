@@ -334,15 +334,26 @@ router.get('/portainer/status', authenticateToken, async (req, res) => {
       // First check if Portainer is reachable
       const statusResponse = await axios.get(`${config.portainer.url}/api/status`);
       logger.info(`Portainer status response: ${JSON.stringify(statusResponse.data)}`);
+      logger.info(`Portainer version: ${statusResponse.data.Version}`);
 
       // Then try to authenticate
-      await portainerService.authenticate();
+      const token = await portainerService.authenticate();
       logger.info('Portainer authentication successful');
+      logger.info(`JWT token received: ${token ? 'Yes' : 'No'}`);
+
+      // Test endpoints access with token
+      const headers = {
+        'Authorization': `Bearer ${token}`
+      };
+
+      const endpointsResponse = await axios.get(`${config.portainer.url}/api/endpoints`, { headers });
+      logger.info(`Endpoints access successful. Found ${endpointsResponse.data.length || 0} endpoints.`);
 
       res.json({
         status: 'connected',
         version: statusResponse.data.Version,
-        message: 'Successfully connected to Portainer'
+        message: 'Successfully connected to Portainer',
+        endpoints: endpointsResponse.data.length || 0
       });
     } catch (portainerError) {
       logger.error('Portainer connection error:', portainerError.message);
