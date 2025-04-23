@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  beyondfire-cloud:
+  beyondfire-cloud-api:
     build: .
     image: beyondfire-cloud-api:latest
     container_name: beyondfire-cloud-api
