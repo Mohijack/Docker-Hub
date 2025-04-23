@@ -5,7 +5,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: beyondfire-cloud-api:latest
     container_name: beyondfire-cloud-api
     restart: unless-stopped
     ports:
@@ -28,7 +27,6 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    image: beyondfire-cloud-frontend:latest
     container_name: beyondfire-cloud-frontend
     restart: unless-stopped
     ports:
