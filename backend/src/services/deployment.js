@@ -30,6 +30,29 @@ class DeploymentService {
         return { success: false, message };
       }
 
+      // Special handling for FE2 service
+      if (booking.serviceId === 'fe2-docker') {
+        // Create nginx configuration file for FE2
+        const nginxConfigDir = path.join(__dirname, '../../../data', `fe2_${booking.id}`, 'nginx', 'conf');
+
+        // Ensure directory exists
+        fs.mkdirSync(nginxConfigDir, { recursive: true });
+
+        // Read nginx template
+        const nginxTemplate = fs.readFileSync(path.join(__dirname, '../templates/fe2-nginx.conf'), 'utf8');
+
+        // Replace placeholders
+        const nginxConfig = nginxTemplate
+          .replace(/\{\{DOMAIN\}\}/g, booking.domain)
+          .replace(/\{\{UNIQUE_ID\}\}/g, booking.id);
+
+        // Write nginx config
+        fs.writeFileSync(path.join(nginxConfigDir, 'default.conf'), nginxConfig);
+
+        // Create config directory for FE2
+        fs.mkdirSync(path.join(__dirname, '../../../data', `fe2_${booking.id}`, 'config', 'data'), { recursive: true });
+      }
+
       // Deploy to Portainer
       const stackName = `customer-${booking.userId.substring(0, 8)}-${booking.serviceId}`;
 

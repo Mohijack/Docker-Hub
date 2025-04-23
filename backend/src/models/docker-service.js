@@ -19,138 +19,74 @@ if (!fs.existsSync(SERVICES_FILE)) {
   // Create some default services
   const defaultServices = [
     {
-      id: 'wordpress-basic',
-      name: 'WordPress Basic',
-      description: 'Basic WordPress installation with MySQL',
-      price: 5.99,
-      image: 'wordpress:latest',
-      resources: {
-        cpu: 1,
-        memory: '1GB',
-        storage: '10GB'
-      },
-      composeTemplate: `
-version: '3.8'
-services:
-  wordpress:
-    image: wordpress:latest
-    restart: always
-    environment:
-      WORDPRESS_DB_HOST: db
-      WORDPRESS_DB_USER: wordpress
-      WORDPRESS_DB_PASSWORD: wordpress
-      WORDPRESS_DB_NAME: wordpress
-    ports:
-      - "{{PORT}}:80"
-    volumes:
-      - wordpress_data:/var/www/html
-  
-  db:
-    image: mysql:5.7
-    restart: always
-    environment:
-      MYSQL_DATABASE: wordpress
-      MYSQL_USER: wordpress
-      MYSQL_PASSWORD: wordpress
-      MYSQL_RANDOM_ROOT_PASSWORD: '1'
-    volumes:
-      - db_data:/var/lib/mysql
-
-volumes:
-  wordpress_data:
-  db_data:
-`
-    },
-    {
-      id: 'nextcloud',
-      name: 'Nextcloud',
-      description: 'Self-hosted productivity platform',
-      price: 8.99,
-      image: 'nextcloud:latest',
+      id: 'fe2-docker',
+      name: 'FE2 - Feuerwehr Einsatzleitsystem',
+      description: 'Alamos FE2 - Professionelles Einsatzleitsystem für Feuerwehren',
+      price: 19.99,
+      image: 'alamosgmbh/fe2:latest',
       resources: {
         cpu: 2,
         memory: '2GB',
-        storage: '20GB'
+        storage: '10GB'
       },
       composeTemplate: `
-version: '3.8'
+version: "3.7"
+
 services:
-  nextcloud:
-    image: nextcloud:latest
-    restart: always
+  fe2_database:
+    image: mongo:4.4.29
+    container_name: fe2_database_{{UNIQUE_ID}}
+    logging:
+      driver: none
+    ports:
+      - 27017
+    volumes:
+      - ./data/fe2_{{UNIQUE_ID}}/config/database/configdb:/data/configdb
+      - ./data/fe2_{{UNIQUE_ID}}/config/database:/data/db
+    restart: unless-stopped
+
+  fe2_app:
+    image: alamosgmbh/fe2:2.36.100
+    container_name: fe2_app_{{UNIQUE_ID}}
+    hostname: fe2-{{DOMAIN}}
+    environment:
+      - FE2_EMAIL={{FE2_EMAIL}}
+      - FE2_PASSWORD={{FE2_PASSWORD}}
+      - FE2_ACTIVATION_NAME=fe2_{{UNIQUE_ID}}
+      - FE2_IP_MONGODB=fe2_database_{{UNIQUE_ID}}
+      - FE2_PORT_MONGODB=27017
+    ports:
+      - "{{PORT}}:83"
+    volumes:
+      - ./data/fe2_{{UNIQUE_ID}}/logs:/Logs
+      - ./data/fe2_{{UNIQUE_ID}}/config:/Config
+      - ./data/cacerts:/usr/lib/jvm/default-jvm/jre/lib/security/cacerts
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    restart: unless-stopped
+    healthcheck:
+      test: curl --fail http://localhost:83/ || exit 1
+      interval: 60s
+      retries: 3
+      start_period: 60s
+      timeout: 10s
+    depends_on:
+      - fe2_database
+
+  fe2_nginx:
+    image: nginx:alpine
+    container_name: fe2_nginx_{{UNIQUE_ID}}
     ports:
       - "{{PORT}}:80"
     volumes:
-      - nextcloud_data:/var/www/html
-    environment:
-      - MYSQL_HOST=db
-      - MYSQL_DATABASE=nextcloud
-      - MYSQL_USER=nextcloud
-      - MYSQL_PASSWORD=nextcloud
-
-  db:
-    image: mariadb:10.5
-    restart: always
-    volumes:
-      - db_data:/var/lib/mysql
-    environment:
-      - MYSQL_ROOT_PASSWORD=nextcloud
-      - MYSQL_DATABASE=nextcloud
-      - MYSQL_USER=nextcloud
-      - MYSQL_PASSWORD=nextcloud
-
-volumes:
-  nextcloud_data:
-  db_data:
-`
-    },
-    {
-      id: 'ghost-blog',
-      name: 'Ghost Blog',
-      description: 'Professional publishing platform',
-      price: 6.99,
-      image: 'ghost:latest',
-      resources: {
-        cpu: 1,
-        memory: '1GB',
-        storage: '5GB'
-      },
-      composeTemplate: `
-version: '3.8'
-services:
-  ghost:
-    image: ghost:latest
-    restart: always
-    ports:
-      - "{{PORT}}:2368"
-    volumes:
-      - ghost_data:/var/lib/ghost/content
-    environment:
-      - url=http://{{DOMAIN}}
-      - database__client=mysql
-      - database__connection__host=db
-      - database__connection__user=ghost
-      - database__connection__password=ghost
-      - database__connection__database=ghost
-
-  db:
-    image: mysql:5.7
-    restart: always
-    volumes:
-      - db_data:/var/lib/mysql
-    environment:
-      - MYSQL_ROOT_PASSWORD=ghost
-      - MYSQL_DATABASE=ghost
-      - MYSQL_USER=ghost
-      - MYSQL_PASSWORD=ghost
-
-volumes:
-  ghost_data:
-  db_data:
+      - ./data/fe2_{{UNIQUE_ID}}/nginx/conf:/etc/nginx/conf.d
+    restart: unless-stopped
+    depends_on:
+      - fe2_app
 `
     }
   ];
-  
+
   fs.writeFileSync(SERVICES_FILE, JSON.stringify(defaultServices, null, 2));
 }
 
@@ -212,10 +148,10 @@ class DockerServiceModel {
 
     // Generate a unique port number between 10000 and 20000
     const port = Math.floor(Math.random() * 10000) + 10000;
-    
+
     // Generate a unique subdomain if not provided
     const subdomain = customDomain || `${serviceId}-${crypto.randomBytes(3).toString('hex')}`;
-    
+
     // Create booking
     const booking = {
       id: crypto.randomUUID(),
@@ -260,7 +196,7 @@ class DockerServiceModel {
     this.bookings[index].status = status;
     if (stackId) this.bookings[index].stackId = stackId;
     if (dnsRecordId) this.bookings[index].dnsRecordId = dnsRecordId;
-    
+
     this.saveBookings();
 
     return { success: true, booking: this.bookings[index] };
@@ -282,6 +218,18 @@ class DockerServiceModel {
     let composeContent = service.composeTemplate
       .replace(/{{PORT}}/g, booking.port)
       .replace(/{{DOMAIN}}/g, booking.domain);
+
+    // Special handling for FE2 service
+    if (booking.serviceId === 'fe2-docker') {
+      // Generate a unique ID for the FE2 instance
+      const uniqueId = booking.id.substring(0, 8);
+
+      // Replace FE2-specific placeholders
+      composeContent = composeContent
+        .replace(/{{UNIQUE_ID}}/g, uniqueId)
+        .replace(/{{FE2_EMAIL}}/g, 'admin@beyondfire.cloud')
+        .replace(/{{FE2_PASSWORD}}/g, 'BeyondFire2024!');
+    }
 
     return { success: true, composeContent };
   }
