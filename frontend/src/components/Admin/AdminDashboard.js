@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ServiceLogs from './ServiceLogs';
 import './AdminDashboard.css';
 
 function AdminDashboard() {
@@ -8,13 +9,14 @@ function AdminDashboard() {
   const [selectedService, setSelectedService] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [actionSuccess, setActionSuccess] = useState('');
+  const [showLogs, setShowLogs] = useState(false);
 
   useEffect(() => {
     fetchServices();
-    
+
     // Auto-refresh every 30 seconds
     const intervalId = setInterval(fetchServices, 30000);
-    
+
     return () => clearInterval(intervalId);
   }, []);
 
@@ -22,17 +24,17 @@ function AdminDashboard() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
+
       const response = await fetch('/api/admin/services', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch services');
       }
-      
+
       const data = await response.json();
       setServices(data.services);
       setError('');
@@ -47,24 +49,32 @@ function AdminDashboard() {
     try {
       setActionLoading(true);
       setActionSuccess('');
+
+      // Special handling for logs action
+      if (action === 'logs') {
+        setShowLogs(true);
+        setActionLoading(false);
+        return;
+      }
+
       const token = localStorage.getItem('token');
-      
+
       const response = await fetch(`/api/admin/services/${serviceId}/${action}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       if (!response.ok) {
         throw new Error(`Failed to ${action} service`);
       }
-      
+
       const data = await response.json();
       setActionSuccess(`Service ${action} erfolgreich`);
-      
+
       // Update the service in the list
-      setServices(services.map(service => 
+      setServices(services.map(service =>
         service.id === serviceId ? { ...service, status: data.status } : service
       ));
     } catch (error) {
@@ -80,6 +90,7 @@ function AdminDashboard() {
 
   const closeDetails = () => {
     setSelectedService(null);
+    setShowLogs(false);
   };
 
   const getStatusClass = (status) => {
@@ -105,18 +116,24 @@ function AdminDashboard() {
           <span className="refresh-icon">&#x21bb;</span> Aktualisieren
         </button>
       </div>
-      
+
       {error && <div className="error-message">{error}</div>}
       {actionSuccess && <div className="success-message">{actionSuccess}</div>}
-      
-      {selectedService ? (
+
+      {showLogs && selectedService ? (
+        <ServiceLogs
+          serviceId={selectedService.id}
+          serviceName={selectedService.customName}
+          onClose={() => setShowLogs(false)}
+        />
+      ) : selectedService ? (
         <div className="service-details-modal">
           <div className="service-details-content">
             <div className="service-details-header">
               <h3>{selectedService.customName}</h3>
               <button className="close-button" onClick={closeDetails}>×</button>
             </div>
-            
+
             <div className="service-details-body">
               <div className="detail-row">
                 <span className="detail-label">Service ID:</span>
@@ -134,9 +151,9 @@ function AdminDashboard() {
               </div>
               <div className="detail-row">
                 <span className="detail-label">Domain:</span>
-                <a 
-                  href={`http://${selectedService.domain}`} 
-                  target="_blank" 
+                <a
+                  href={`http://${selectedService.domain}`}
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="domain-link"
                 >
@@ -159,7 +176,7 @@ function AdminDashboard() {
                   {new Date(selectedService.expiresAt).toLocaleString()}
                 </span>
               </div>
-              
+
               <div className="detail-section">
                 <h4>Kundeninformationen</h4>
                 <div className="detail-row">
@@ -175,7 +192,7 @@ function AdminDashboard() {
                   <span className="detail-value">{selectedService.userEmail || 'Nicht verfügbar'}</span>
                 </div>
               </div>
-              
+
               {selectedService.licenseInfo && (
                 <div className="detail-section">
                   <h4>Lizenzinformationen</h4>
@@ -186,7 +203,7 @@ function AdminDashboard() {
                   <div className="detail-row">
                     <span className="detail-label">Passwort:</span>
                     <span className="detail-value">
-                      <button 
+                      <button
                         className="show-password-button"
                         onClick={() => alert(`Passwort: ${selectedService.licenseInfo.password}`)}
                       >
@@ -196,12 +213,12 @@ function AdminDashboard() {
                   </div>
                 </div>
               )}
-              
+
               <div className="service-actions">
                 <h4>Service-Aktionen</h4>
                 <div className="action-buttons">
                   {selectedService.status === 'pending' && (
-                    <button 
+                    <button
                       className="action-button deploy-button"
                       onClick={() => handleServiceAction(selectedService.id, 'deploy')}
                       disabled={actionLoading}
@@ -209,9 +226,9 @@ function AdminDashboard() {
                       {actionLoading ? 'Wird ausgeführt...' : 'Bereitstellen'}
                     </button>
                   )}
-                  
+
                   {selectedService.status === 'active' && (
-                    <button 
+                    <button
                       className="action-button suspend-button"
                       onClick={() => handleServiceAction(selectedService.id, 'suspend')}
                       disabled={actionLoading}
@@ -219,9 +236,9 @@ function AdminDashboard() {
                       {actionLoading ? 'Wird ausgeführt...' : 'Pausieren'}
                     </button>
                   )}
-                  
+
                   {selectedService.status === 'suspended' && (
-                    <button 
+                    <button
                       className="action-button resume-button"
                       onClick={() => handleServiceAction(selectedService.id, 'resume')}
                       disabled={actionLoading}
@@ -229,16 +246,16 @@ function AdminDashboard() {
                       {actionLoading ? 'Wird ausgeführt...' : 'Fortsetzen'}
                     </button>
                   )}
-                  
-                  <button 
+
+                  <button
                     className="action-button logs-button"
-                    onClick={() => handleServiceAction(selectedService.id, 'logs')}
+                    onClick={() => setShowLogs(true)}
                     disabled={actionLoading}
                   >
                     Logs anzeigen
                   </button>
-                  
-                  <button 
+
+                  <button
                     className="action-button delete-button"
                     onClick={() => {
                       if (window.confirm('Sind Sie sicher, dass Sie diesen Service löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.')) {
@@ -284,9 +301,9 @@ function AdminDashboard() {
                       <div className="user-email">{service.userEmail || 'Keine E-Mail'}</div>
                     </td>
                     <td>
-                      <a 
-                        href={`http://${service.domain}`} 
-                        target="_blank" 
+                      <a
+                        href={`http://${service.domain}`}
+                        target="_blank"
                         rel="noopener noreferrer"
                         className={`domain-link ${service.status !== 'active' ? 'disabled' : ''}`}
                       >
@@ -301,7 +318,7 @@ function AdminDashboard() {
                     <td>{new Date(service.createdAt).toLocaleDateString()}</td>
                     <td>
                       <div className="action-buttons">
-                        <button 
+                        <button
                           className="action-button view-button"
                           onClick={() => handleViewDetails(service)}
                         >

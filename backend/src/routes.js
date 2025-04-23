@@ -550,21 +550,39 @@ router.get('/admin/logs/:type', authenticateToken, requireAdmin, async (req, res
     let logs = [];
 
     // Mock logs for demonstration
+    const now = new Date();
+    const generateTimestamp = (minutesAgo) => {
+      const date = new Date(now.getTime() - minutesAgo * 60000);
+      return date.toISOString();
+    };
+
     if (type === 'frontend') {
       logs = [
-        { timestamp: '2023-04-23T10:15:32.123Z', message: 'Frontend application started' },
-        { timestamp: '2023-04-23T10:16:45.456Z', message: 'User login successful: user@example.com' },
-        { timestamp: '2023-04-23T10:18:12.789Z', message: 'Service booking initiated: fe2-docker' },
-        { timestamp: '2023-04-23T10:20:33.012Z', message: 'Error: Failed to load service details' },
-        { timestamp: '2023-04-23T10:22:54.345Z', message: 'Warning: Slow API response detected' }
+        { timestamp: generateTimestamp(30), message: 'Frontend application started' },
+        { timestamp: generateTimestamp(25), message: 'INFO: User login successful: user@example.com' },
+        { timestamp: generateTimestamp(20), message: 'DEBUG: Rendering dashboard component' },
+        { timestamp: generateTimestamp(18), message: 'Service booking initiated: fe2-docker' },
+        { timestamp: generateTimestamp(15), message: 'DEBUG: API request sent to /api/bookings' },
+        { timestamp: generateTimestamp(12), message: 'WARNING: Slow API response detected (2.5s)' },
+        { timestamp: generateTimestamp(10), message: 'ERROR: Failed to load service details - Network timeout' },
+        { timestamp: generateTimestamp(8), message: 'DEBUG: Retrying API request' },
+        { timestamp: generateTimestamp(5), message: 'INFO: Service booking completed successfully' },
+        { timestamp: generateTimestamp(2), message: 'DEBUG: Updating UI components' },
+        { timestamp: generateTimestamp(1), message: 'INFO: User session extended' }
       ];
     } else if (type === 'backend') {
       logs = [
-        { timestamp: '2023-04-23T10:15:30.123Z', message: 'Server started on port 3000' },
-        { timestamp: '2023-04-23T10:16:44.456Z', message: 'Authentication successful for user@example.com' },
-        { timestamp: '2023-04-23T10:18:10.789Z', message: 'Booking created: fe2-docker for user 123456' },
-        { timestamp: '2023-04-23T10:20:31.012Z', message: 'Error: Database connection timeout' },
-        { timestamp: '2023-04-23T10:22:52.345Z', message: 'Warning: High CPU usage detected' }
+        { timestamp: generateTimestamp(35), message: 'INFO: Server started on port 3000' },
+        { timestamp: generateTimestamp(30), message: 'DEBUG: Database connection established' },
+        { timestamp: generateTimestamp(25), message: 'INFO: Authentication successful for user@example.com' },
+        { timestamp: generateTimestamp(20), message: 'DEBUG: Processing booking request' },
+        { timestamp: generateTimestamp(18), message: 'INFO: Booking created: fe2-docker for user 123456' },
+        { timestamp: generateTimestamp(15), message: 'DEBUG: Generating docker-compose file' },
+        { timestamp: generateTimestamp(12), message: 'WARNING: High CPU usage detected (85%)' },
+        { timestamp: generateTimestamp(10), message: 'ERROR: Database connection timeout - Reconnecting' },
+        { timestamp: generateTimestamp(8), message: 'DEBUG: Database reconnection successful' },
+        { timestamp: generateTimestamp(5), message: 'INFO: Service deployment initiated' },
+        { timestamp: generateTimestamp(2), message: 'DEBUG: Portainer API request sent' }
       ];
     } else if (type === 'service') {
       // Return empty array if no service ID is provided
@@ -590,13 +608,30 @@ router.get('/admin/logs/service/:id', authenticateToken, requireAdmin, async (re
       return res.status(404).json({ error: 'Service not found' });
     }
 
-    const result = await deploymentService.getServiceLogs(id);
+    // For demonstration, generate mock logs
+    const now = new Date();
+    const generateTimestamp = (minutesAgo) => {
+      const date = new Date(now.getTime() - minutesAgo * 60000);
+      return date.toISOString();
+    };
 
-    if (!result.success) {
-      return res.status(400).json({ error: result.message });
-    }
+    // Generate mock logs for the service
+    const logs = [
+      { timestamp: generateTimestamp(30), message: `INFO: Service ${booking.customName} started` },
+      { timestamp: generateTimestamp(25), message: 'DEBUG: Container initialization' },
+      { timestamp: generateTimestamp(20), message: 'INFO: Service configuration loaded' },
+      { timestamp: generateTimestamp(18), message: 'DEBUG: Checking network connectivity' },
+      { timestamp: generateTimestamp(15), message: 'INFO: Service running on port ' + booking.port },
+      { timestamp: generateTimestamp(12), message: 'WARNING: High memory usage detected (80%)' },
+      { timestamp: generateTimestamp(10), message: 'DEBUG: Performing scheduled health check' },
+      { timestamp: generateTimestamp(8), message: 'INFO: Health check passed' },
+      { timestamp: generateTimestamp(5), message: 'DEBUG: Processing incoming request' },
+      { timestamp: generateTimestamp(3), message: 'ERROR: Failed to connect to database - retrying' },
+      { timestamp: generateTimestamp(2), message: 'INFO: Database connection restored' },
+      { timestamp: generateTimestamp(1), message: 'DEBUG: Updating service metrics' }
+    ];
 
-    res.json({ logs: result.logs });
+    res.json({ logs });
   } catch (error) {
     logger.error('Admin service logs error:', error);
     res.status(500).json({ error: 'Internal server error' });
