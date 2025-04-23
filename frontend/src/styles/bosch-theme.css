@@ -146,6 +146,19 @@ body {
   color: var(--bosch-red);
 }
 
+.admin-button {
+  background-color: var(--bosch-blue);
+  color: var(--bosch-white) !important;
+  padding: 8px 16px;
+  border-radius: 0;
+  transition: background-color 0.3s;
+}
+
+.admin-button:hover {
+  background-color: var(--bosch-dark-blue);
+  color: var(--bosch-white) !important;
+}
+
 /* Hero Section */
 .hero {
   background: linear-gradient(135deg, var(--bosch-blue), var(--bosch-dark-blue));

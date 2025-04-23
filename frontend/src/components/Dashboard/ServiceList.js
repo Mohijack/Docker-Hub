@@ -90,7 +90,7 @@ function ServiceList({ services, onBook }) {
             </div>
 
             {/* Lizenzinformationen für FE2 */}
-            {selectedService.id === 'fe2-docker' && (
+            {selectedService && selectedService.id === 'fe2-docker' && (
               <>
                 <div className="license-section">
                   <h4>Alamos FE2 Lizenzinformationen</h4>

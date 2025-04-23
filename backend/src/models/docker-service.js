@@ -202,14 +202,14 @@ class DockerServiceModel {
     return { success: true, booking };
   }
 
-  // Get user bookings
-  getUserBookings(userId) {
-    return this.bookings.filter(booking => booking.userId === userId);
-  }
-
   // Get booking by ID
   getBookingById(id) {
     return this.bookings.find(booking => booking.id === id);
+  }
+
+  // Get all bookings for a user
+  getUserBookings(userId) {
+    return this.bookings.filter(booking => booking.userId === userId);
   }
 
   // Update booking status

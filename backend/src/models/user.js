@@ -141,8 +141,8 @@ class UserModel {
     const index = this.users.findIndex(user => user.id === id);
     if (index === -1) return { success: false, message: 'User not found' };
 
-    // Don't allow updating sensitive fields
-    const { email, role, passwordHash, passwordSalt, ...allowedUpdates } = userData;
+    // Allow role updates but not other sensitive fields
+    const { email, passwordHash, passwordSalt, ...allowedUpdates } = userData;
 
     // Update user
     this.users[index] = { ...this.users[index], ...allowedUpdates };
@@ -151,6 +151,34 @@ class UserModel {
     // Return updated user without sensitive data
     const { passwordHash: ph, passwordSalt: ps, ...userWithoutPassword } = this.users[index];
     return { success: true, user: userWithoutPassword };
+  }
+
+  // Reset user password (admin function)
+  resetPassword(id, newPassword) {
+    const index = this.users.findIndex(user => user.id === id);
+    if (index === -1) return { success: false, message: 'User not found' };
+
+    // Hash new password
+    const { hash, salt } = this.hashPassword(newPassword);
+
+    // Update user
+    this.users[index].passwordHash = hash;
+    this.users[index].passwordSalt = salt;
+    this.saveUsers();
+
+    return { success: true };
+  }
+
+  // Delete user (admin function)
+  deleteUser(id) {
+    const index = this.users.findIndex(user => user.id === id);
+    if (index === -1) return { success: false, message: 'User not found' };
+
+    // Remove user
+    this.users.splice(index, 1);
+    this.saveUsers();
+
+    return { success: true };
   }
 
   // Add service to user

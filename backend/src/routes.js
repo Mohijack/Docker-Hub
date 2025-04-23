@@ -378,6 +378,231 @@ router.get('/admin/users', authenticateToken, requireAdmin, async (req, res) => 
   }
 });
 
+// Get user by ID (admin only)
+router.get('/admin/users/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const user = userModel.getUserById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const { passwordHash, passwordSalt, ...userWithoutPassword } = user;
+
+    res.json({ user: userWithoutPassword });
+  } catch (error) {
+    logger.error('Admin user details error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get user services (admin only)
+router.get('/admin/users/:id/services', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const services = dockerServiceModel.getUserBookings(req.params.id);
+    res.json({ services });
+  } catch (error) {
+    logger.error('Admin user services error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Reset user password (admin only)
+router.post('/admin/users/:id/reset-password', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { password } = req.body;
+
+    if (!password || password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters long' });
+    }
+
+    const result = userModel.resetPassword(req.params.id, password);
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.message });
+    }
+
+    res.json({ message: 'Password reset successfully' });
+  } catch (error) {
+    logger.error('Admin password reset error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Change user role (admin only)
+router.post('/admin/users/:id/role', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { role } = req.body;
+
+    if (!role || !['user', 'admin'].includes(role)) {
+      return res.status(400).json({ error: 'Invalid role' });
+    }
+
+    const result = userModel.updateUser(req.params.id, { role });
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.message });
+    }
+
+    res.json({ message: 'Role updated successfully', user: result.user });
+  } catch (error) {
+    logger.error('Admin role change error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Delete user (admin only)
+router.delete('/admin/users/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    // First delete all user's services
+    const services = dockerServiceModel.getUserBookings(req.params.id);
+
+    for (const service of services) {
+      await deploymentService.deleteService(service.id);
+    }
+
+    // Then delete the user
+    const result = userModel.deleteUser(req.params.id);
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.message });
+    }
+
+    res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    logger.error('Admin user delete error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get all services with user info (admin only)
+router.get('/admin/services', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const bookings = dockerServiceModel.loadBookings();
+    const users = userModel.loadUsers();
+
+    // Enrich bookings with user information
+    const services = bookings.map(booking => {
+      const user = users.find(u => u.id === booking.userId);
+      return {
+        ...booking,
+        userName: user ? user.name : null,
+        userEmail: user ? user.email : null
+      };
+    });
+
+    res.json({ services });
+  } catch (error) {
+    logger.error('Admin services error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Perform service action (admin only)
+router.post('/admin/services/:id/:action', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id, action } = req.params;
+    const booking = dockerServiceModel.getBookingById(id);
+
+    if (!booking) {
+      return res.status(404).json({ error: 'Service not found' });
+    }
+
+    let result;
+
+    switch (action) {
+      case 'deploy':
+        result = await deploymentService.deployService(id);
+        break;
+      case 'suspend':
+        result = await deploymentService.suspendService(id);
+        break;
+      case 'resume':
+        result = await deploymentService.resumeService(id);
+        break;
+      case 'delete':
+        result = await deploymentService.deleteService(id);
+        break;
+      default:
+        return res.status(400).json({ error: 'Invalid action' });
+    }
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.message });
+    }
+
+    res.json({
+      message: `Service ${action} successful`,
+      status: action === 'deploy' ? 'deploying' :
+              action === 'suspend' ? 'suspended' :
+              action === 'resume' ? 'active' : 'deleted'
+    });
+  } catch (error) {
+    logger.error(`Admin service ${req.params.action} error:`, error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get system logs (admin only)
+router.get('/admin/logs/:type', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { type } = req.params;
+    let logs = [];
+
+    // Mock logs for demonstration
+    if (type === 'frontend') {
+      logs = [
+        { timestamp: '2023-04-23T10:15:32.123Z', message: 'Frontend application started' },
+        { timestamp: '2023-04-23T10:16:45.456Z', message: 'User login successful: user@example.com' },
+        { timestamp: '2023-04-23T10:18:12.789Z', message: 'Service booking initiated: fe2-docker' },
+        { timestamp: '2023-04-23T10:20:33.012Z', message: 'Error: Failed to load service details' },
+        { timestamp: '2023-04-23T10:22:54.345Z', message: 'Warning: Slow API response detected' }
+      ];
+    } else if (type === 'backend') {
+      logs = [
+        { timestamp: '2023-04-23T10:15:30.123Z', message: 'Server started on port 3000' },
+        { timestamp: '2023-04-23T10:16:44.456Z', message: 'Authentication successful for user@example.com' },
+        { timestamp: '2023-04-23T10:18:10.789Z', message: 'Booking created: fe2-docker for user 123456' },
+        { timestamp: '2023-04-23T10:20:31.012Z', message: 'Error: Database connection timeout' },
+        { timestamp: '2023-04-23T10:22:52.345Z', message: 'Warning: High CPU usage detected' }
+      ];
+    } else if (type === 'service') {
+      // Return empty array if no service ID is provided
+      logs = [];
+    } else {
+      return res.status(400).json({ error: 'Invalid log type' });
+    }
+
+    res.json({ logs });
+  } catch (error) {
+    logger.error('Admin logs error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get service logs (admin only)
+router.get('/admin/logs/service/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const booking = dockerServiceModel.getBookingById(id);
+
+    if (!booking) {
+      return res.status(404).json({ error: 'Service not found' });
+    }
+
+    const result = await deploymentService.getServiceLogs(id);
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.message });
+    }
+
+    res.json({ logs: result.logs });
+  } catch (error) {
+    logger.error('Admin service logs error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Get all bookings (admin only)
 router.get('/admin/bookings', authenticateToken, requireAdmin, async (req, res) => {
   try {

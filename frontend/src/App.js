@@ -9,6 +9,7 @@ import Home from './components/Home/Home';
 import Login from './components/Auth/Login';
 import Register from './components/Auth/Register';
 import Dashboard from './components/Dashboard/Dashboard';
+import AdminPanel from './components/Admin/AdminPanel';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -49,6 +50,14 @@ function App() {
             <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <Login onLogin={handleLogin} />} />
             <Route path="/register" element={user ? <Navigate to="/dashboard" /> : <Register />} />
             <Route path="/dashboard" element={user ? <Dashboard user={user} /> : <Navigate to="/login" />} />
+            <Route
+              path="/admin/*"
+              element={
+                user && user.role === 'admin'
+                  ? <AdminPanel user={user} />
+                  : <Navigate to="/dashboard" />
+              }
+            />
           </Routes>
         </main>
 

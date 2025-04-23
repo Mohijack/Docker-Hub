@@ -32,6 +32,11 @@ function Navbar({ user, onLogout }) {
           {user ? (
             <>
               <Link to="/dashboard" className="navbar-item">Dashboard</Link>
+              {user.role === 'admin' && (
+                <Link to="/admin" className="navbar-item admin-button">
+                  Admin Panel
+                </Link>
+              )}
               <button onClick={handleLogout} className="navbar-item logout-button">
                 Abmelden
               </button>
