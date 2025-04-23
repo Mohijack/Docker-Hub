@@ -803,7 +803,7 @@ body {
 
 .booking-header {
   display: grid;
-  grid-template-columns: 2fr 2fr 1fr 1fr;
+  grid-template-columns: 2fr 2fr 1fr 1fr 1.5fr;
   background-color: var(--bosch-blue);
   color: var(--bosch-white);
   font-weight: 500;
@@ -812,7 +812,7 @@ body {
 
 .booking-row {
   display: grid;
-  grid-template-columns: 2fr 2fr 1fr 1fr;
+  grid-template-columns: 2fr 2fr 1fr 1fr 1.5fr;
   border-bottom: 1px solid var(--bosch-border);
   transition: background-color 0.3s;
 }
@@ -923,6 +923,15 @@ body {
   background-color: #c5000f;
 }
 
+.btn-delete {
+  background-color: var(--bosch-red);
+  margin-top: 8px;
+}
+
+.btn-delete:hover {
+  background-color: #c5000f;
+}
+
 .empty-state {
   text-align: center;
   padding: 40px;
@@ -989,6 +998,10 @@ body {
 
   .booking-header, .booking-row {
     grid-template-columns: 1fr;
+  }
+
+  .btn-delete {
+    margin-top: 16px;
   }
 
   .booking-header {

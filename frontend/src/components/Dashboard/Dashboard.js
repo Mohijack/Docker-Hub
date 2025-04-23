@@ -189,6 +189,32 @@ function Dashboard({ user }) {
     }
   };
 
+  const handleDeleteService = async (bookingId) => {
+    try {
+      const token = localStorage.getItem('token');
+
+      const response = await fetch(`/api/bookings/${bookingId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete service');
+      }
+
+      // Remove booking from the list
+      setBookings(bookings.filter(booking => booking.id !== bookingId));
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
+
   if (loading) {
     return <div className="loading">Loading...</div>;
   }
@@ -215,6 +241,7 @@ function Dashboard({ user }) {
             onDeploy={handleDeployService}
             onSuspend={handleSuspendService}
             onResume={handleResumeService}
+            onDelete={handleDeleteService}
           />
         </div>
 

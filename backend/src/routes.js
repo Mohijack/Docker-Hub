@@ -295,6 +295,33 @@ router.post('/bookings/:id/resume', authenticateToken, async (req, res) => {
   }
 });
 
+// Delete a service
+router.delete('/bookings/:id', authenticateToken, async (req, res) => {
+  try {
+    const booking = dockerServiceModel.getBookingById(req.params.id);
+
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+
+    // Check if booking belongs to user or user is admin
+    if (booking.userId !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const result = await deploymentService.deleteService(req.params.id);
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.message });
+    }
+
+    res.json({ message: 'Service deleted successfully' });
+  } catch (error) {
+    logger.error('Delete error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Admin routes
 
 // Get all users (admin only)

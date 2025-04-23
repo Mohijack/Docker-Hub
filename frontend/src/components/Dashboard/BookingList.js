@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 
-function BookingList({ bookings, onDeploy, onSuspend, onResume }) {
+function BookingList({ bookings, onDeploy, onSuspend, onResume, onDelete }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [actionBookingId, setActionBookingId] = useState(null);
+  const [currentAction, setCurrentAction] = useState(null);
 
   const handleAction = async (action, bookingId) => {
     setError('');
     setSuccess('');
     setLoading(true);
     setActionBookingId(bookingId);
+    setCurrentAction(action);
 
     try {
       let result;
@@ -29,6 +31,10 @@ function BookingList({ bookings, onDeploy, onSuspend, onResume }) {
           result = await onResume(bookingId);
           successMessage = 'Dienst erfolgreich fortgesetzt!';
           break;
+        case 'delete':
+          result = await onDelete(bookingId);
+          successMessage = 'Dienst erfolgreich gelöscht!';
+          break;
         default:
           throw new Error('Invalid action');
       }
@@ -43,6 +49,7 @@ function BookingList({ bookings, onDeploy, onSuspend, onResume }) {
     } finally {
       setLoading(false);
       setActionBookingId(null);
+      setCurrentAction(null);
     }
   };
 
@@ -161,6 +168,19 @@ function BookingList({ bookings, onDeploy, onSuspend, onResume }) {
                   {loading && actionBookingId === booking.id ? 'Wird wiederholt...' : 'Wiederholen'}
                 </button>
               )}
+
+              {/* Löschen-Button für alle Status */}
+              <button
+                className="btn-action btn-delete"
+                onClick={() => {
+                  if (window.confirm('Sind Sie sicher, dass Sie diesen Dienst löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.')) {
+                    handleAction('delete', booking.id);
+                  }
+                }}
+                disabled={loading && actionBookingId === booking.id}
+              >
+                {loading && actionBookingId === booking.id && currentAction === 'delete' ? 'Wird gelöscht...' : 'Löschen'}
+              </button>
             </div>
           </div>
         ))}

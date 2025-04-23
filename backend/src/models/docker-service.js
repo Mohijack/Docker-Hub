@@ -91,6 +91,11 @@ class DockerServiceModel {
     return this.services.find(service => service.id === id);
   }
 
+  // Check if a domain is already in use
+  isDomainInUse(domain) {
+    return this.bookings.some(booking => booking.domain === domain);
+  }
+
   // Book a service
   bookService(userId, serviceId, customDomain, customName) {
     const service = this.getServiceById(serviceId);
@@ -102,7 +107,27 @@ class DockerServiceModel {
     const port = Math.floor(Math.random() * 10000) + 10000;
 
     // Generate a unique subdomain if not provided
-    const subdomain = customDomain || `${serviceId}-${crypto.randomBytes(3).toString('hex')}`;
+    let subdomain = customDomain || `${serviceId}-${crypto.randomBytes(3).toString('hex')}`;
+    let domain = `${subdomain}.beyondfire.cloud`;
+
+    // Check if the domain is already in use
+    if (customDomain) {
+      if (this.isDomainInUse(domain)) {
+        return { success: false, message: `Die Domain '${domain}' wird bereits verwendet. Bitte wählen Sie eine andere Subdomain.` };
+      }
+    } else {
+      // If auto-generated, ensure it's unique
+      let attempts = 0;
+      while (this.isDomainInUse(domain) && attempts < 5) {
+        subdomain = `${serviceId}-${crypto.randomBytes(3).toString('hex')}`;
+        domain = `${subdomain}.beyondfire.cloud`;
+        attempts++;
+      }
+
+      if (this.isDomainInUse(domain)) {
+        return { success: false, message: 'Konnte keine eindeutige Domain generieren. Bitte versuchen Sie es später erneut.' };
+      }
+    }
 
     // Create booking
     const booking = {
@@ -111,7 +136,7 @@ class DockerServiceModel {
       serviceId,
       serviceName: service.name,
       customName: customName || service.name,
-      domain: `${subdomain}.beyondfire.cloud`,
+      domain,
       port,
       status: 'pending', // pending, active, suspended
       createdAt: new Date().toISOString(),
