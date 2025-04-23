@@ -29,12 +29,56 @@ if (!fs.existsSync(SERVICES_FILE)) {
         memory: '2GB',
         storage: '10GB'
       },
-      composeTemplate: `version: '3'
+      composeTemplate: `version: '3.7'
+
 services:
-  nginx:
+  fe2_database:
+    image: mongo:4.4.29
+    container_name: fe2_database_{{UNIQUE_ID}}
+    logging:
+      driver: none
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./data/fe2_{{UNIQUE_ID}}/config/database/configdb:/data/configdb
+      - ./data/fe2_{{UNIQUE_ID}}/config/database:/data/db
+    restart: unless-stopped
+
+  fe2_app:
+    image: alamosgmbh/fe2:2.36.100
+    container_name: fe2_app_{{UNIQUE_ID}}
+    hostname: fe2-{{DOMAIN}}
+    environment:
+      - FE2_EMAIL={{FE2_EMAIL}}
+      - FE2_PASSWORD={{FE2_PASSWORD}}
+      - FE2_ACTIVATION_NAME=fe2_{{UNIQUE_ID}}
+      - FE2_IP_MONGODB=fe2_database_{{UNIQUE_ID}}
+      - FE2_PORT_MONGODB=27017
+    ports:
+      - "{{PORT}}:83"
+    volumes:
+      - ./data/fe2_{{UNIQUE_ID}}/logs:/Logs
+      - ./data/fe2_{{UNIQUE_ID}}/config:/Config
+    restart: unless-stopped
+    healthcheck:
+      test: curl --fail http://localhost:83/ || exit 1
+      interval: 60s
+      retries: 3
+      start_period: 60s
+      timeout: 10s
+    depends_on:
+      - fe2_database
+
+  fe2_nginx:
     image: nginx:alpine
+    container_name: fe2_nginx_{{UNIQUE_ID}}
     ports:
       - "{{PORT}}:80"
+    volumes:
+      - ./data/fe2_{{UNIQUE_ID}}/nginx/conf:/etc/nginx/conf.d
+    restart: unless-stopped
+    depends_on:
+      - fe2_app
 `
     }
   ];
@@ -222,6 +266,30 @@ class DockerServiceModel {
         .replace(/{{UNIQUE_ID}}/g, uniqueId)
         .replace(/{{FE2_EMAIL}}/g, 'admin@beyondfire.cloud')
         .replace(/{{FE2_PASSWORD}}/g, 'BeyondFire2024!');
+
+      // Create nginx configuration file
+      try {
+        // Create directories if they don't exist
+        const nginxConfigDir = `./data/fe2_${uniqueId}/nginx/conf`;
+        if (!fs.existsSync(nginxConfigDir)) {
+          fs.mkdirSync(nginxConfigDir, { recursive: true });
+        }
+
+        // Read nginx configuration template
+        const nginxConfigTemplate = fs.readFileSync('./backend/src/templates/fe2-nginx.conf', 'utf8');
+
+        // Replace placeholders in nginx configuration
+        const nginxConfig = nginxConfigTemplate
+          .replace(/{{UNIQUE_ID}}/g, uniqueId)
+          .replace(/{{DOMAIN}}/g, booking.domain);
+
+        // Write nginx configuration file
+        fs.writeFileSync(`${nginxConfigDir}/default.conf`, nginxConfig);
+
+        logger.info(`Nginx configuration file created for booking ${bookingId}`);
+      } catch (error) {
+        logger.error(`Failed to create nginx configuration file for booking ${bookingId}:`, error);
+      }
     }
 
     return { success: true, composeContent };
