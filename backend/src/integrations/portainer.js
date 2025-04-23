@@ -134,17 +134,40 @@ class PortainerService {
 
       // Stack erstellen mit der korrekten Methode für Portainer 2.27.4
       logger.info(`Using endpoint ID: ${endpointId}`);
-      const response = await axios.post(
-        `${this.baseURL}/api/stacks/create/standalone/string?endpointId=${endpointId}`,
-        {
-          name,
-          stackFileContent: composeFileContent
-        },
-        { headers }
-      );
+      logger.info(`Creating stack with name: ${name}`);
+      logger.info(`Compose file content:\n${composeFileContent}`);
 
-      logger.info(`Stack created: ${name} with ID: ${response.data.Id}`);
-      return response.data;
+      try {
+        const response = await axios.post(
+          `${this.baseURL}/api/stacks/create/standalone/string?endpointId=${endpointId}`,
+          {
+            name,
+            stackFileContent: composeFileContent
+          },
+          { headers }
+        );
+        return response.data;
+      } catch (postError) {
+        logger.error(`Error in POST request: ${postError.message}`);
+        if (postError.response) {
+          logger.error(`Status: ${postError.response.status}`);
+          logger.error(`Data: ${JSON.stringify(postError.response.data)}`);
+
+          // Try a different API endpoint for older Portainer versions
+          logger.info('Trying alternative API endpoint for older Portainer versions...');
+          const altResponse = await axios.post(
+            `${this.baseURL}/api/stacks?type=1&method=string&endpointId=${endpointId}`,
+            {
+              Name: name,
+              StackFileContent: composeFileContent
+            },
+            { headers }
+          );
+          return altResponse.data;
+        } else {
+          throw postError;
+        }
+      }
     } catch (error) {
       logger.error(`Failed to create stack ${name}:`, error.message);
       if (error.response) {
