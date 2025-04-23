@@ -2,7 +2,9 @@ version: '3.8'
 
 services:
   beyondfire-cloud-api:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: beyondfire-cloud-api:latest
     container_name: beyondfire-cloud-api
     restart: unless-stopped
@@ -23,7 +25,9 @@ services:
       - beyondfire-data:/app/data
 
   beyondfire-cloud-frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     image: beyondfire-cloud-frontend:latest
     container_name: beyondfire-cloud-frontend
     restart: unless-stopped
