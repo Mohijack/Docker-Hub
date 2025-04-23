@@ -15,7 +15,7 @@ WORKDIR /app
 
 # Copy package files and install dependencies
 COPY package*.json ./
-RUN npm ci --production
+RUN npm ci --only=production
 
 # Copy application code
 COPY . .
@@ -27,6 +27,5 @@ RUN mkdir -p logs
 EXPOSE 3000
 
 # Start the application
-CMD ["node", "src/index.js"]
-
+CMD ["node", "backend/src/index.js"]
 
