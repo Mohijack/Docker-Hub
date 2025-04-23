@@ -57,9 +57,16 @@ class DeploymentService {
       const stackName = `customer-${booking.userId.substring(0, 8)}-${booking.serviceId}`;
 
       // Authenticate with Portainer
-      await portainerService.authenticate();
+      try {
+        await portainerService.authenticate();
+        logger.info('Successfully authenticated with Portainer');
+      } catch (authError) {
+        logger.error('Failed to authenticate with Portainer:', authError.message);
+        throw new Error(`Portainer authentication failed: ${authError.message}`);
+      }
 
       // Create stack
+      logger.info(`Creating stack: ${stackName}`);
       const stackResult = await portainerService.createStack(stackName, composeContent);
 
       // Update booking with stack ID
@@ -125,9 +132,16 @@ class DeploymentService {
       }
 
       // Authenticate with Portainer
-      await portainerService.authenticate();
+      try {
+        await portainerService.authenticate();
+        logger.info('Successfully authenticated with Portainer');
+      } catch (authError) {
+        logger.error('Failed to authenticate with Portainer:', authError.message);
+        throw new Error(`Portainer authentication failed: ${authError.message}`);
+      }
 
       // Delete stack
+      logger.info(`Deleting stack for booking ${bookingId}`);
       await portainerService.deleteStack(booking.stackId);
 
       // Update booking status
@@ -159,9 +173,16 @@ class DeploymentService {
       const stackName = `customer-${booking.userId.substring(0, 8)}-${booking.serviceId}`;
 
       // Authenticate with Portainer
-      await portainerService.authenticate();
+      try {
+        await portainerService.authenticate();
+        logger.info('Successfully authenticated with Portainer');
+      } catch (authError) {
+        logger.error('Failed to authenticate with Portainer:', authError.message);
+        throw new Error(`Portainer authentication failed: ${authError.message}`);
+      }
 
       // Create stack
+      logger.info(`Creating stack: ${stackName}`);
       const stackResult = await portainerService.createStack(stackName, composeContent);
 
       // Update booking with stack ID
@@ -190,9 +211,16 @@ class DeploymentService {
       // Check if booking has a stack ID
       if (booking.stackId) {
         // Authenticate with Portainer
-        await portainerService.authenticate();
+        try {
+          await portainerService.authenticate();
+          logger.info('Successfully authenticated with Portainer');
+        } catch (authError) {
+          logger.error('Failed to authenticate with Portainer:', authError.message);
+          throw new Error(`Portainer authentication failed: ${authError.message}`);
+        }
 
         // Delete stack
+        logger.info(`Deleting stack for booking ${bookingId}`);
         await portainerService.deleteStack(booking.stackId);
       }
 

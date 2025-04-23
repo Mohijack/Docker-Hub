@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
+const axios = require('axios');
 const config = require('./utils/config');
 const logger = require('./utils/logger');
 const portainerService = require('./integrations/portainer');
@@ -325,11 +326,38 @@ router.get('/admin/bookings', authenticateToken, requireAdmin, async (req, res) 
 // Portainer status check
 router.get('/portainer/status', authenticateToken, async (req, res) => {
   try {
-    await portainerService.authenticate();
-    res.json({ status: 'connected' });
+    logger.info('Checking Portainer status...');
+    logger.info(`Portainer URL: ${config.portainer.url}`);
+    logger.info(`Portainer username: ${config.portainer.username}`);
+
+    try {
+      // First check if Portainer is reachable
+      const statusResponse = await axios.get(`${config.portainer.url}/api/status`);
+      logger.info(`Portainer status response: ${JSON.stringify(statusResponse.data)}`);
+
+      // Then try to authenticate
+      await portainerService.authenticate();
+      logger.info('Portainer authentication successful');
+
+      res.json({
+        status: 'connected',
+        version: statusResponse.data.Version,
+        message: 'Successfully connected to Portainer'
+      });
+    } catch (portainerError) {
+      logger.error('Portainer connection error:', portainerError.message);
+      if (portainerError.response) {
+        logger.error(`Status: ${portainerError.response.status}`);
+        logger.error(`Data: ${JSON.stringify(portainerError.response.data)}`);
+      }
+      throw new Error(`Portainer connection failed: ${portainerError.message}`);
+    }
   } catch (error) {
-    logger.error('Portainer status check failed:', error);
-    res.status(500).json({ error: 'Failed to connect to Portainer' });
+    logger.error('Portainer status check failed:', error.message);
+    res.status(500).json({
+      error: 'Failed to connect to Portainer',
+      message: error.message
+    });
   }
 });
 

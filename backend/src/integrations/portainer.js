@@ -4,21 +4,62 @@ const config = require('../utils/config');
 
 class PortainerService {
   constructor() {
-    this.baseURL = config.portainer.url;
+    // Stelle sicher, dass die URL kein abschließendes Schrägstrich hat
+    this.baseURL = config.portainer.url.endsWith('/')
+      ? config.portainer.url.slice(0, -1)
+      : config.portainer.url;
     this.token = null;
+
+    logger.info(`Portainer URL: ${this.baseURL}`);
   }
 
   async authenticate() {
     try {
-      const response = await axios.post(`${this.baseURL}/api/auth`, {
-        username: config.portainer.username,
-        password: config.portainer.password
-      });
+      logger.info(`Authenticating with Portainer at ${this.baseURL}`);
+      logger.info(`Using username: ${config.portainer.username}`);
+
+      // Versuche verschiedene Formate für die Authentifizierungsanfrage
+      let response;
+      try {
+        // Format 1: Standard JSON (lowercase)
+        response = await axios.post(`${this.baseURL}/api/auth`, {
+          username: config.portainer.username,
+          password: config.portainer.password
+        });
+      } catch (err1) {
+        logger.error('First authentication attempt failed:', err1.message);
+
+        try {
+          // Format 2: Camel Case
+          response = await axios.post(`${this.baseURL}/api/auth`, {
+            Username: config.portainer.username,
+            Password: config.portainer.password
+          });
+        } catch (err2) {
+          logger.error('Second authentication attempt failed:', err2.message);
+
+          // Format 3: Form Data
+          const formData = new URLSearchParams();
+          formData.append('username', config.portainer.username);
+          formData.append('password', config.portainer.password);
+
+          response = await axios.post(`${this.baseURL}/api/auth`, formData, {
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded'
+            }
+          });
+        }
+      }
 
       this.token = response.data.jwt;
+      logger.info('Portainer authentication successful');
       return this.token;
     } catch (error) {
-      logger.error('Portainer authentication failed:', error.message);
+      logger.error('All Portainer authentication attempts failed:', error.message);
+      if (error.response) {
+        logger.error(`Status: ${error.response.status}`);
+        logger.error(`Data: ${JSON.stringify(error.response.data)}`);
+      }
       throw new Error('Failed to authenticate with Portainer');
     }
   }
