@@ -82,22 +82,37 @@ class PortainerService {
       logger.info('Got authentication headers');
 
       // Prüfen, ob die Endpunkte erreichbar sind
+      let endpointId = 1; // Standard-Endpunkt-ID
       try {
         const endpointsResponse = await axios.get(`${this.baseURL}/api/endpoints`, { headers });
         logger.info(`Found ${endpointsResponse.data.length || 0} endpoints`);
+
+        // Suche nach dem lokalen Endpunkt
+        const localEndpoint = endpointsResponse.data.find(endpoint => endpoint.Name === 'local');
+        if (localEndpoint) {
+          endpointId = localEndpoint.Id;
+          logger.info(`Using local endpoint with ID: ${endpointId}`);
+        } else if (endpointsResponse.data.length > 0) {
+          endpointId = endpointsResponse.data[0].Id;
+          logger.info(`No local endpoint found. Using first endpoint with ID: ${endpointId}`);
+        }
       } catch (endpointsError) {
         logger.error('Failed to get endpoints:', endpointsError.message);
+        logger.info(`Using default endpoint ID: ${endpointId}`);
       }
 
-      // Stack erstellen
-      const response = await axios.post(`${this.baseURL}/api/stacks`, {
-        name,
-        stackFileContent: composeFileContent,
-        // Für Portainer 2.x müssen wir den Endpunkt angeben
-        endpointId: 1 // Standard-Endpunkt-ID
-      }, { headers });
+      // Stack erstellen mit der korrekten Methode für Portainer 2.27.4
+      logger.info(`Using endpoint ID: ${endpointId}`);
+      const response = await axios.post(
+        `${this.baseURL}/api/stacks/create/standalone/string?endpointId=${endpointId}`,
+        {
+          name,
+          stackFileContent: composeFileContent
+        },
+        { headers }
+      );
 
-      logger.info(`Stack created: ${name}`);
+      logger.info(`Stack created: ${name} with ID: ${response.data.Id}`);
       return response.data;
     } catch (error) {
       logger.error(`Failed to create stack ${name}:`, error.message);
@@ -117,11 +132,35 @@ class PortainerService {
       const headers = await this.getAuthHeaders();
       logger.info('Got authentication headers');
 
-      const response = await axios.put(`${this.baseURL}/api/stacks/${stackId}`, {
-        stackFileContent: composeFileContent,
-        // Für Portainer 2.x müssen wir den Endpunkt angeben
-        endpointId: 1 // Standard-Endpunkt-ID
-      }, { headers });
+      // Prüfen, ob die Endpunkte erreichbar sind
+      let endpointId = 1; // Standard-Endpunkt-ID
+      try {
+        const endpointsResponse = await axios.get(`${this.baseURL}/api/endpoints`, { headers });
+        logger.info(`Found ${endpointsResponse.data.length || 0} endpoints`);
+
+        // Suche nach dem lokalen Endpunkt
+        const localEndpoint = endpointsResponse.data.find(endpoint => endpoint.Name === 'local');
+        if (localEndpoint) {
+          endpointId = localEndpoint.Id;
+          logger.info(`Using local endpoint with ID: ${endpointId}`);
+        } else if (endpointsResponse.data.length > 0) {
+          endpointId = endpointsResponse.data[0].Id;
+          logger.info(`No local endpoint found. Using first endpoint with ID: ${endpointId}`);
+        }
+      } catch (endpointsError) {
+        logger.error('Failed to get endpoints:', endpointsError.message);
+        logger.info(`Using default endpoint ID: ${endpointId}`);
+      }
+
+      // Stack aktualisieren mit der korrekten Methode für Portainer 2.27.4
+      logger.info(`Using endpoint ID: ${endpointId}`);
+      const response = await axios.put(
+        `${this.baseURL}/api/stacks/${stackId}?endpointId=${endpointId}`,
+        {
+          stackFileContent: composeFileContent
+        },
+        { headers }
+      );
 
       logger.info(`Stack updated: ${stackId}`);
       return response.data;
@@ -143,13 +182,29 @@ class PortainerService {
       const headers = await this.getAuthHeaders();
       logger.info('Got authentication headers');
 
-      // Für Portainer 2.x müssen wir den Endpunkt angeben
-      await axios.delete(`${this.baseURL}/api/stacks/${stackId}`, {
-        headers,
-        params: {
-          endpointId: 1 // Standard-Endpunkt-ID
+      // Prüfen, ob die Endpunkte erreichbar sind
+      let endpointId = 1; // Standard-Endpunkt-ID
+      try {
+        const endpointsResponse = await axios.get(`${this.baseURL}/api/endpoints`, { headers });
+        logger.info(`Found ${endpointsResponse.data.length || 0} endpoints`);
+
+        // Suche nach dem lokalen Endpunkt
+        const localEndpoint = endpointsResponse.data.find(endpoint => endpoint.Name === 'local');
+        if (localEndpoint) {
+          endpointId = localEndpoint.Id;
+          logger.info(`Using local endpoint with ID: ${endpointId}`);
+        } else if (endpointsResponse.data.length > 0) {
+          endpointId = endpointsResponse.data[0].Id;
+          logger.info(`No local endpoint found. Using first endpoint with ID: ${endpointId}`);
         }
-      });
+      } catch (endpointsError) {
+        logger.error('Failed to get endpoints:', endpointsError.message);
+        logger.info(`Using default endpoint ID: ${endpointId}`);
+      }
+
+      // Stack löschen mit der korrekten Methode für Portainer 2.27.4
+      logger.info(`Using endpoint ID: ${endpointId}`);
+      await axios.delete(`${this.baseURL}/api/stacks/${stackId}?endpointId=${endpointId}`, { headers });
 
       logger.info(`Stack deleted: ${stackId}`);
       return true;
