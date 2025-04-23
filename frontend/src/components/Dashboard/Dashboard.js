@@ -67,7 +67,7 @@ function Dashboard({ user }) {
     return () => clearInterval(intervalId);
   }, [user, navigate]);
 
-  const handleBookService = async (serviceId, customName, customDomain) => {
+  const handleBookService = async (serviceId, customName, customDomain, licenseInfo) => {
     try {
       const token = localStorage.getItem('token');
 
@@ -80,7 +80,8 @@ function Dashboard({ user }) {
         body: JSON.stringify({
           serviceId,
           customName,
-          customDomain
+          customDomain,
+          licenseInfo
         })
       });
 

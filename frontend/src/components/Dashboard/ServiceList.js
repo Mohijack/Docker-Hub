@@ -4,6 +4,8 @@ function ServiceList({ services, onBook }) {
   const [selectedService, setSelectedService] = useState(null);
   const [customName, setCustomName] = useState('');
   const [customDomain, setCustomDomain] = useState('');
+  const [licenseEmail, setLicenseEmail] = useState('');
+  const [licensePassword, setLicensePassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -12,6 +14,8 @@ function ServiceList({ services, onBook }) {
     setSelectedService(service);
     setCustomName(service.name);
     setCustomDomain('');
+    setLicenseEmail('');
+    setLicensePassword('');
     setError('');
     setSuccess('');
   };
@@ -23,7 +27,13 @@ function ServiceList({ services, onBook }) {
     setLoading(true);
 
     try {
-      const result = await onBook(selectedService.id, customName, customDomain);
+      // Prepare license info if needed
+      const licenseInfo = selectedService.id === 'fe2-docker' ? {
+        email: licenseEmail,
+        password: licensePassword
+      } : null;
+
+      const result = await onBook(selectedService.id, customName, customDomain, licenseInfo);
 
       if (!result.success) {
         throw new Error(result.error);
@@ -33,6 +43,8 @@ function ServiceList({ services, onBook }) {
       setSelectedService(null);
       setCustomName('');
       setCustomDomain('');
+      setLicenseEmail('');
+      setLicensePassword('');
     } catch (error) {
       setError(error.message);
     } finally {
@@ -76,6 +88,40 @@ function ServiceList({ services, onBook }) {
               </div>
               <small>Leer lassen für automatisch generierte Subdomain</small>
             </div>
+
+            {/* Lizenzinformationen für FE2 */}
+            {selectedService.id === 'fe2-docker' && (
+              <>
+                <div className="license-section">
+                  <h4>Alamos FE2 Lizenzinformationen</h4>
+                  <p>Bitte geben Sie Ihre Alamos FE2 Lizenzinformationen ein:</p>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="licenseEmail">E-Mail-Adresse</label>
+                  <input
+                    type="email"
+                    id="licenseEmail"
+                    value={licenseEmail}
+                    onChange={(e) => setLicenseEmail(e.target.value)}
+                    required
+                    placeholder="ihre-email@beispiel.de"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="licensePassword">Passwort</label>
+                  <input
+                    type="password"
+                    id="licensePassword"
+                    value={licensePassword}
+                    onChange={(e) => setLicensePassword(e.target.value)}
+                    required
+                    placeholder="Ihr Alamos FE2 Passwort"
+                  />
+                </div>
+              </>
+            )}
 
             <div className="form-actions">
               <button
