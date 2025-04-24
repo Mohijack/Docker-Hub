@@ -12,7 +12,7 @@ function Home() {
             einfach zu deployen, zuverlässig im Betrieb und optimal für Ihre Feuerwehr.
           </p>
           <div className="hero-buttons">
-            <Link to="/register" className="btn-primary">Jetzt starten</Link>
+            <Link to="/booking" className="btn-primary">Jetzt starten</Link>
             <Link to="/login" className="btn-secondary">Anmelden</Link>
           </div>
         </div>
@@ -74,7 +74,7 @@ function Home() {
           </div>
 
           <div className="services-cta">
-            <Link to="/register" className="btn-primary">FE2 jetzt bereitstellen</Link>
+            <Link to="/booking" className="btn-primary">FE2 jetzt bereitstellen</Link>
           </div>
         </div>
       </section>
@@ -84,28 +84,32 @@ function Home() {
           <h2>So einfach geht's</h2>
 
           <div className="steps">
-            <div className="step">
+            <div className="step step-1">
+              <div className="step-badge">Schritt 1</div>
               <div className="step-number">1</div>
               <div className="step-icon">👤</div>
               <h3>Konto erstellen</h3>
               <p>Registrieren Sie sich in wenigen Sekunden bei BeyondFire Cloud und erhalten Sie sofort Zugang.</p>
             </div>
 
-            <div className="step">
+            <div className="step step-2">
+              <div className="step-badge">Schritt 2</div>
               <div className="step-number">2</div>
               <div className="step-icon">⚙️</div>
               <h3>FE2 konfigurieren</h3>
               <p>Wählen Sie einen Namen und optional eine benutzerdefinierte Subdomain für Ihr FE2-System.</p>
             </div>
 
-            <div className="step">
+            <div className="step step-3">
+              <div className="step-badge">Schritt 3</div>
               <div className="step-number">3</div>
               <div className="step-icon">🚀</div>
               <h3>Bereitstellen</h3>
               <p>Klicken Sie auf "Bereitstellen" und Ihr FE2-System ist in wenigen Minuten einsatzbereit.</p>
             </div>
 
-            <div className="step">
+            <div className="step step-4">
+              <div className="step-badge">Schritt 4</div>
               <div className="step-number">4</div>
               <div className="step-icon">🔥</div>
               <h3>Sofort nutzen</h3>
@@ -115,7 +119,7 @@ function Home() {
 
           <div className="how-it-works-cta">
             <p>Bereit, Ihr eigenes FE2-System in der Cloud zu starten?</p>
-            <Link to="/register" className="btn-primary">Jetzt kostenlos starten</Link>
+            <Link to="/booking" className="btn-primary">Jetzt starten</Link>
           </div>
         </div>
       </section>

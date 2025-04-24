@@ -286,7 +286,6 @@
 .step {
   text-align: center;
   padding: 30px;
-  background-color: white;
   border-radius: 12px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
@@ -295,15 +294,53 @@
   overflow: hidden;
 }
 
-.step::before {
-  content: '';
+.step-1 {
+  background-color: rgba(52, 152, 219, 0.1);
+  border: 1px solid rgba(52, 152, 219, 0.2);
+}
+
+.step-2 {
+  background-color: rgba(155, 89, 182, 0.1);
+  border: 1px solid rgba(155, 89, 182, 0.2);
+}
+
+.step-3 {
+  background-color: rgba(46, 204, 113, 0.1);
+  border: 1px solid rgba(46, 204, 113, 0.2);
+}
+
+.step-4 {
+  background-color: rgba(230, 126, 34, 0.1);
+  border: 1px solid rgba(230, 126, 34, 0.2);
+}
+
+.step-badge {
   position: absolute;
   top: 0;
-  left: 0;
-  width: 100%;
-  height: 5px;
-  background: linear-gradient(90deg, #3498db, #2c3e50);
-  z-index: 1;
+  right: 0;
+  background: linear-gradient(135deg, #3498db, #2c3e50);
+  color: white;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-bottom-left-radius: 12px;
+  z-index: 2;
+}
+
+.step-1 .step-badge {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+}
+
+.step-2 .step-badge {
+  background: linear-gradient(135deg, #9b59b6, #8e44ad);
+}
+
+.step-3 .step-badge {
+  background: linear-gradient(135deg, #2ecc71, #27ae60);
+}
+
+.step-4 .step-badge {
+  background: linear-gradient(135deg, #e67e22, #d35400);
 }
 
 .step:hover {
@@ -408,16 +445,26 @@
 
   .step {
     margin-bottom: 20px;
+    padding: 40px 20px 20px;
   }
 
   .how-it-works h2 {
     font-size: 2rem;
   }
 
+  .step-badge {
+    width: 100%;
+    border-radius: 0;
+    text-align: center;
+    padding: 6px;
+    font-size: 0.8rem;
+  }
+
   .step-number {
     width: 60px;
     height: 60px;
     font-size: 1.5rem;
+    margin-top: 10px;
   }
 
   .step-icon {
