@@ -178,10 +178,14 @@
 }
 
 .log-timestamp {
-  color: #666;
+  color: var(--text-light);
   margin-right: 12px;
   min-width: 180px;
   user-select: none;
+}
+
+[data-theme="dark"] .log-timestamp {
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .log-level {
@@ -192,6 +196,11 @@
 
 .log-message {
   flex: 1;
+  color: var(--text);
+}
+
+[data-theme="dark"] .log-message {
+  color: var(--text);
 }
 
 .log-error {
