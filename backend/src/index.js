@@ -48,7 +48,6 @@ try {
     const routes = require('./routes');
     const cloudflareService = require('./integrations/cloudflare');
     const { apiLimiter } = require('./middleware/security.middleware');
-    const bcrypt = require('bcryptjs');
 
     const app = express();
     const PORT = config.port || 3000;
@@ -215,7 +214,7 @@ try {
         // Create new user
         const newUser = new User({
           email,
-          password: await bcrypt.hash(password, 10),
+          password: password, // Temporarily store password in plain text
           name,
           company: company || '',
           role: 'user',
