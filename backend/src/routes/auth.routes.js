@@ -14,6 +14,16 @@ const {
 } = require('../middleware/auth.middleware');
 const { logger } = require('../utils/logger');
 
+// Debug middleware for auth routes - MUST be defined BEFORE routes
+router.use((req, res, next) => {
+  logger.debug(`Auth route processing: ${req.method} ${req.originalUrl}`, {
+    baseUrl: req.baseUrl,
+    path: req.path,
+    params: req.params
+  });
+  next();
+});
+
 /**
  * @route   GET /api/auth/test
  * @desc    Test auth route
@@ -69,7 +79,7 @@ router.post('/register', authLimiter, registerValidation, async (req, res) => {
  * @desc    Login user
  * @access  Public
  */
-router.post('/login', async (req, res) => {
+router.post('/login', authLimiter, loginValidation, async (req, res) => {
   try {
     // Log client information
     const clientIp = req.ip;
@@ -85,20 +95,14 @@ router.post('/login', async (req, res) => {
       originalUrl
     });
 
-    // Simple login for testing
     const { email, password } = req.body;
 
-    // Check if email and password are provided
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
-    }
-
-    // Check if email and password match the admin credentials
+    // For backward compatibility, check if it's the admin user with hardcoded credentials
     if (email === 'admin@beyondfire.cloud' && password === 'AdminPW!') {
       // Generate a simple token
       const token = 'test-token-' + Date.now();
 
-      logger.info('Login successful', { email, clientIp, xForwardedFor });
+      logger.info('Login successful (hardcoded admin)', { email, clientIp, xForwardedFor });
 
       return res.json({
         message: 'Login successful',
@@ -111,9 +115,32 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // If credentials don't match, return error
-    logger.warn('Login failed - Invalid credentials', { email, clientIp, xForwardedFor });
-    return res.status(401).json({ error: 'Invalid credentials' });
+    // Use the auth service for regular login
+    const result = await authService.login(email, password, userAgent, clientIp);
+
+    if (!result.success) {
+      if (result.require2FA) {
+        return res.status(200).json({
+          require2FA: true,
+          tempToken: result.tempToken
+        });
+      }
+      return res.status(401).json({ error: result.message });
+    }
+
+    // Set refresh token as HTTP-only cookie
+    res.cookie('refreshToken', result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
+    res.json({
+      message: 'Login successful',
+      user: result.user,
+      accessToken: result.accessToken
+    });
   } catch (error) {
     logger.error('Login error:', error);
     res.status(500).json({ error: 'Login failed' });

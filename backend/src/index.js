@@ -95,7 +95,7 @@ try {
       });
     });
 
-    // Direct API test endpoint
+    // Keep direct test endpoint for diagnostics
     app.get('/api/direct-test', (req, res) => {
       logger.info('Direct API test route accessed', {
         originalUrl: req.originalUrl,
@@ -111,98 +111,32 @@ try {
       });
     });
 
-    // Direct API test routes
-    app.get('/api/test', (req, res) => {
-      logger.info('API test route accessed', {
-        originalUrl: req.originalUrl,
+    // Debug middleware for all requests - MUST be defined BEFORE routes
+    app.use((req, res, next) => {
+      logger.debug(`Request received: ${req.method} ${req.originalUrl}`, {
         baseUrl: req.baseUrl,
         path: req.path,
-        params: req.params
+        params: req.params,
+        ip: req.ip
       });
-      res.json({
-        message: 'API routes are working correctly',
-        originalUrl: req.originalUrl,
-        baseUrl: req.baseUrl,
-        path: req.path
-      });
+      next();
     });
 
-    app.get('/api/auth/test', (req, res) => {
-      logger.info('Auth test route accessed', {
-        originalUrl: req.originalUrl,
-        baseUrl: req.baseUrl,
-        path: req.path,
-        params: req.params
-      });
-      res.json({
-        message: 'Auth routes are working correctly',
-        originalUrl: req.originalUrl,
-        baseUrl: req.baseUrl,
-        path: req.path
-      });
-    });
-
-    app.post('/api/auth/login', async (req, res) => {
-      try {
-        // Log client information
-        const clientIp = req.ip;
-        const xForwardedFor = req.headers['x-forwarded-for'];
-        const userAgent = req.headers['user-agent'] || 'Unknown';
-        const originalUrl = req.originalUrl;
-
-        logger.info('Login attempt received', {
-          body: req.body,
-          clientIp,
-          xForwardedFor,
-          userAgent,
-          originalUrl
-        });
-
-        // Simple login for testing
-        const { email, password } = req.body;
-
-        // Check if email and password are provided
-        if (!email || !password) {
-          return res.status(400).json({ error: 'Email and password are required' });
-        }
-
-        // Check if email and password match the admin credentials
-        if (email === 'admin@beyondfire.cloud' && password === 'AdminPW!') {
-          // Generate a simple token
-          const token = 'test-token-' + Date.now();
-
-          logger.info('Login successful', { email, clientIp, xForwardedFor });
-
-          return res.json({
-            message: 'Login successful',
-            user: {
-              email,
-              name: 'Admin',
-              role: 'admin'
-            },
-            accessToken: token
-          });
-        }
-
-        // If credentials don't match, return error
-        logger.warn('Login failed - Invalid credentials', { email, clientIp, xForwardedFor });
-        return res.status(401).json({ error: 'Invalid credentials' });
-      } catch (error) {
-        logger.error('Login error:', error);
-        res.status(500).json({ error: 'Login failed' });
-      }
-    });
-
-    // API Routes (for other routes)
+    // API Routes
     app.use('/api', routes);
 
     // Direct login test route
     const loginTestRoutes = require('./routes/login-test');
     app.use('/login-test', loginTestRoutes);
 
-    // API 404 handler
+    // API 404 handler - MUST be defined AFTER routes
     app.use('/api/*', (req, res) => {
-      logger.warn(`API route not found: ${req.method} ${req.originalUrl}`);
+      logger.warn(`API route not found: ${req.method} ${req.originalUrl}`, {
+        baseUrl: req.baseUrl,
+        path: req.path,
+        params: req.params,
+        ip: req.ip
+      });
       res.status(404).json({ error: 'API endpoint not found' });
     });
 

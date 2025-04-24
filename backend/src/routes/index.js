@@ -7,6 +7,16 @@ const bookingRoutes = require('./booking.routes');
 const adminRoutes = require('./admin.routes');
 const { logger } = require('../utils/logger');
 
+// Debug middleware for API routes - MUST be defined BEFORE routes
+router.use((req, res, next) => {
+  logger.debug(`API route processing: ${req.method} ${req.originalUrl}`, {
+    baseUrl: req.baseUrl,
+    path: req.path,
+    params: req.params
+  });
+  next();
+});
+
 // Health check endpoint
 router.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -36,13 +46,15 @@ router.use('/services', serviceRoutes);
 router.use('/bookings', bookingRoutes);
 router.use('/admin', adminRoutes);
 
-// Debug middleware for API routes
+// 404 handler for API routes - MUST be defined AFTER routes
 router.use((req, res, next) => {
-  logger.debug(`API route processing: ${req.method} ${req.originalUrl}`, {
+  // If we get here, no route matched
+  logger.warn(`API route not found in router: ${req.method} ${req.originalUrl}`, {
     baseUrl: req.baseUrl,
     path: req.path,
     params: req.params
   });
+  // Pass to next middleware (will be caught by the 404 handler in index.js)
   next();
 });
 
