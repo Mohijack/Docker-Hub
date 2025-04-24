@@ -19,8 +19,6 @@ services:
     networks:
       - beyondfire-network
 
-
-
   beyondfire-cloud-api:
     build:
       context: .
@@ -49,7 +47,7 @@ services:
     volumes:
       - beyondfire-logs:/app/logs
     depends_on:
-      - beyondfire-mongodb-init
+      - beyondfire-mongodb
     networks:
       - beyondfire-network
 
