@@ -20,8 +20,18 @@ const { logger } = require('../utils/logger');
  * @access  Public
  */
 router.get('/test', (req, res) => {
-  logger.info('Auth test route accessed');
-  res.json({ message: 'Auth routes are working correctly' });
+  logger.info('Auth test route accessed', {
+    originalUrl: req.originalUrl,
+    baseUrl: req.baseUrl,
+    path: req.path,
+    params: req.params
+  });
+  res.json({
+    message: 'Auth routes are working correctly',
+    originalUrl: req.originalUrl,
+    baseUrl: req.baseUrl,
+    path: req.path
+  });
 });
 
 /**

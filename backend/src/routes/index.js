@@ -14,7 +14,19 @@ router.get('/health', (req, res) => {
 
 // Test endpoint
 router.get('/test', (req, res) => {
-  res.json({ message: 'API routes are working correctly' });
+  const { logger } = require('../utils/logger');
+  logger.info('API test route accessed', {
+    originalUrl: req.originalUrl,
+    baseUrl: req.baseUrl,
+    path: req.path,
+    params: req.params
+  });
+  res.json({
+    message: 'API routes are working correctly',
+    originalUrl: req.originalUrl,
+    baseUrl: req.baseUrl,
+    path: req.path
+  });
 });
 
 // Mount routes
