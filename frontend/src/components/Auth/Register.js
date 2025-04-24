@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { register } from '../../services/authService';
 
 function Register() {
   const [formData, setFormData] = useState({
@@ -27,19 +28,7 @@ function Register() {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Registration failed');
-      }
+      await register(formData);
 
       // Registration successful, redirect to appropriate login page
       if (isBookingRedirect) {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './styles/bosch-theme.css';
+import { getCurrentUser, logout } from './services/authService';
 
 // Components
 import Navbar from './components/Layout/Navbar';
@@ -19,11 +20,10 @@ function App() {
 
   useEffect(() => {
     // Check if user is logged in
-    const storedUser = localStorage.getItem('user');
-    const token = localStorage.getItem('token');
+    const storedUser = getCurrentUser();
 
-    if (storedUser && token) {
-      setUser(JSON.parse(storedUser));
+    if (storedUser) {
+      setUser(storedUser);
     }
 
     setLoading(false);
@@ -33,7 +33,8 @@ function App() {
     setUser(userData);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await logout();
     setUser(null);
   };
 

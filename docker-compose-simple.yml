@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   beyondfire-mongodb:
-    image: mongo:6.0
+    image: mongo:4.4
     container_name: beyondfire-mongodb
     restart: unless-stopped
     environment:
@@ -19,7 +19,7 @@ services:
       - beyondfire-network
 
   beyondfire-mongodb-init:
-    image: mongo:6.0
+    image: mongo:4.4
     container_name: beyondfire-mongodb-init
     restart: "no"
     depends_on:
@@ -33,15 +33,15 @@ services:
       echo 'Waiting for MongoDB to be ready...' &&
       sleep 30 &&
       echo 'Initializing MongoDB...' &&
-      mongosh --host beyondfire-mongodb:27017 -u admin -p BeyondFireAdmin2023! --authenticationDatabase admin --eval '
+      mongo --host beyondfire-mongodb:27017 -u admin -p BeyondFireAdmin2023! --authenticationDatabase admin --eval '
         const dbName = \"beyondfire_cloud\";
         const db = db.getSiblingDB(dbName);
-        
+
         // Create collections if they do not exist
         if (!db.getCollectionNames().includes(\"users\")) {
           db.createCollection(\"users\");
           print(\"Created users collection\");
-          
+
           // Create default admin user
           db.users.insertOne({
             email: \"admin@beyondfire.cloud\",
@@ -53,11 +53,11 @@ services:
           });
           print(\"Created default admin user\");
         }
-        
+
         if (!db.getCollectionNames().includes(\"services\")) {
           db.createCollection(\"services\");
           print(\"Created services collection\");
-          
+
           // Create default FE2 service
           db.services.insertOne({
             id: \"fe2-docker\",
@@ -77,17 +77,17 @@ services:
           });
           print(\"Created default FE2 service\");
         }
-        
+
         if (!db.getCollectionNames().includes(\"bookings\")) {
           db.createCollection(\"bookings\");
           print(\"Created bookings collection\");
         }
-        
+
         if (!db.getCollectionNames().includes(\"logs\")) {
           db.createCollection(\"logs\");
           print(\"Created logs collection\");
         }
-        
+
         print(\"MongoDB initialization completed successfully\");
       '
       "

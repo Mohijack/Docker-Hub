@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   beyondfire-mongodb:
-    image: mongo:6.0
+    image: mongo:4.4
     container_name: beyondfire-mongodb
     restart: unless-stopped
     environment:
@@ -16,7 +16,7 @@ services:
       - mongodb-config:/data/configdb
     command: ["--auth", "--bind_ip_all"]
     healthcheck:
-      test: ["CMD", "mongosh", "admin", "--eval", "db.adminCommand('ping').ok", "--quiet", "--host", "localhost", "--port", "27017", "-u", "admin", "-p", "BeyondFireAdmin2023!", "--authenticationDatabase", "admin"]
+      test: ["CMD", "mongo", "admin", "--eval", "db.adminCommand('ping').ok", "--quiet", "--host", "localhost", "--port", "27017", "-u", "admin", "-p", "BeyondFireAdmin2023!", "--authenticationDatabase", "admin"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -25,7 +25,7 @@ services:
       - beyondfire-network
 
   beyondfire-mongodb-init:
-    image: mongo:6.0
+    image: mongo:4.4
     container_name: beyondfire-mongodb-init
     restart: "no"
     depends_on:
@@ -40,7 +40,7 @@ services:
       echo 'Waiting for MongoDB to be ready...' &&
       sleep 10 &&
       echo 'Initializing MongoDB...' &&
-      mongosh --host beyondfire-mongodb:27017 -u admin -p BeyondFireAdmin2023! --authenticationDatabase admin --eval '
+      mongo --host beyondfire-mongodb:27017 -u admin -p BeyondFireAdmin2023! --authenticationDatabase admin --eval '
         const dbName = \"beyondfire_cloud\";
         const db = db.getSiblingDB(dbName);
 

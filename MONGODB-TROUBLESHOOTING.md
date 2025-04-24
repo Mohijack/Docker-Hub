@@ -1,6 +1,16 @@
 # MongoDB-Fehlerbehebung für BeyondFire Cloud
 
-Dieses Dokument enthält Anweisungen zur Fehlerbehebung, wenn MongoDB im Docker-Stack als "unhealthy" markiert wird.
+Dieses Dokument enthält Anweisungen zur Fehlerbehebung für häufige MongoDB-Probleme im Docker-Stack.
+
+## AVX-Unterstützungsproblem
+
+**Problem**: MongoDB 5.0+ erfordert einen Prozessor mit AVX-Unterstützung. Wenn Ihr Server einen älteren Prozessor hat, sehen Sie möglicherweise diesen Fehler:
+
+```
+WARNING: MongoDB 5.0+ requires a CPU with AVX support, and your current system does not appear to have that!
+```
+
+**Lösung**: Verwenden Sie MongoDB 4.4, die keine AVX-Unterstützung benötigt. Die docker-compose.yml wurde bereits aktualisiert, um MongoDB 4.4 zu verwenden.
 
 ## Häufige Probleme und Lösungen
 
