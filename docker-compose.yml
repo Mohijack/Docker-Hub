@@ -1,6 +1,28 @@
 version: '3.8'
 
 services:
+  beyondfire-mongodb:
+    image: mongo:6.0
+    container_name: beyondfire-mongodb
+    restart: unless-stopped
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+      - mongodb-config:/data/configdb
+    command: ["--auth", "--bind_ip_all"]
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/admin -u ${MONGO_ROOT_USERNAME} -p ${MONGO_ROOT_PASSWORD} --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - beyondfire-network
+
   beyondfire-cloud-api:
     build:
       context: .
@@ -18,10 +40,21 @@ services:
       # - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}
       # - CLOUDFLARE_ZONE_ID=${CLOUDFLARE_ZONE_ID}
       - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
       - SERVER_IP=${SERVER_IP}
+      - MONGO_URI=mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@beyondfire-mongodb:27017/${MONGO_DATABASE}?authSource=admin
+      - MONGO_DATABASE=${MONGO_DATABASE}
+      - RATE_LIMIT_WINDOW_MS=15000
+      - RATE_LIMIT_MAX=100
+      - TOKEN_EXPIRY=1h
+      - REFRESH_TOKEN_EXPIRY=7d
     volumes:
       - beyondfire-logs:/app/logs
-      - beyondfire-data:/app/data
+    depends_on:
+      beyondfire-mongodb:
+        condition: service_healthy
+    networks:
+      - beyondfire-network
 
   beyondfire-cloud-frontend:
     build:
@@ -33,7 +66,14 @@ services:
       - "80:80"
     depends_on:
       - beyondfire-cloud-api
+    networks:
+      - beyondfire-network
 
 volumes:
   beyondfire-logs:
-  beyondfire-data:
+  mongodb-data:
+  mongodb-config:
+
+networks:
+  beyondfire-network:
+    driver: bridge

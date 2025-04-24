@@ -3,6 +3,8 @@ const cors = require('cors');
 const helmet = require('helmet');
 const path = require('path');
 const fs = require('fs');
+const mongoose = require('mongoose');
+const rateLimit = require('express-rate-limit');
 
 // Ensure logs directory exists
 if (!fs.existsSync(path.join(__dirname, '../../logs'))) {
@@ -18,75 +20,141 @@ fs.writeFileSync(
 
 try {
   // Load configuration and modules
-  const logger = require('./utils/logger');
+  const { logger, addMongoTransport } = require('./utils/logger');
   const config = require('./utils/config');
+  const connectDB = require('./config/database');
 
   // Log startup information
   logger.info('Starting BeyondFire Cloud API server');
   logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
 
-  // Load remaining modules
-  const routes = require('./routes');
-  const cloudflareService = require('./integrations/cloudflare');
+  // Connect to MongoDB
+  connectDB()
+    .then(() => {
+      // Add MongoDB transport to logger after successful connection
+      addMongoTransport();
 
-  const app = express();
-  const PORT = config.port || 3000;
-
-  // Middleware
-  app.use(helmet());
-  app.use(cors());
-  app.use(express.json());
-
-  // Request logging
-  app.use((req, res, next) => {
-    logger.info(`${req.method} ${req.url}`);
-    next();
-  });
-
-  // Log Cloudflare status on startup
-  if (!cloudflareService.isEnabled()) {
-    logger.info('Cloudflare integration is disabled');
-  }
-
-  // Basic health check endpoint
-  app.get('/health', (req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() });
-  });
-
-  // API Routes
-  app.use('/api', routes);
-
-  // Serve static frontend files
-  app.use(express.static(path.join(__dirname, '../../frontend/build')));
-
-  // For any other request, send the React app
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../../frontend/build/index.html'));
-  });
-
-  // Error handling
-  app.use((err, req, res, next) => {
-    logger.error('API Error:', err.stack);
-    res.status(500).json({
-      error: 'Internal Server Error',
-      message: config.nodeEnv === 'development' ? err.message : undefined
+      // Continue with server setup
+      startServer();
+    })
+    .catch(error => {
+      logger.error('Failed to connect to MongoDB:', error);
+      process.exit(1);
     });
-  });
 
-  // Start server
-  const server = app.listen(PORT, () => {
-    logger.info(`Server running in ${config.nodeEnv} mode on port ${PORT}`);
-  });
+  // Server setup function
+  async function startServer() {
+    // Load remaining modules
+    const routes = require('./routes');
+    const cloudflareService = require('./integrations/cloudflare');
+    const { apiLimiter } = require('./middleware/security.middleware');
 
-  // Handle server errors
-  server.on('error', (error) => {
-    logger.error('Server error:', error);
-    fs.writeFileSync(
-      path.join(__dirname, '../../logs/server-error.log'),
-      `Server error at ${new Date().toISOString()}: ${error.message}\n${error.stack}\n`,
-      { flag: 'a' }
-    );
-  });
+    const app = express();
+    const PORT = config.port || 3000;
+
+    // Middleware
+    app.use(helmet());
+    app.use(cors());
+    app.use(express.json({ limit: '1mb' }));
+    app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
+    // Apply rate limiting to all requests
+    app.use(apiLimiter);
+
+    // Request logging
+    app.use((req, res, next) => {
+      logger.info(`${req.method} ${req.url} - IP: ${req.ip}`);
+      next();
+    });
+
+    // Add response time header
+    app.use((req, res, next) => {
+      const start = Date.now();
+      res.on('finish', () => {
+        const duration = Date.now() - start;
+        logger.debug(`${req.method} ${req.url} - ${res.statusCode} - ${duration}ms`);
+      });
+      next();
+    });
+
+    // Log Cloudflare status on startup
+    if (!cloudflareService.isEnabled()) {
+      logger.info('Cloudflare integration is disabled');
+    }
+
+    // Basic health check endpoint
+    app.get('/health', (req, res) => {
+      res.json({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+      });
+    });
+
+    // API Routes
+    app.use('/api', routes);
+
+    // Serve static frontend files
+    app.use(express.static(path.join(__dirname, '../../frontend/build')));
+
+    // For any other request, send the React app
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(__dirname, '../../frontend/build/index.html'));
+    });
+
+    // Error handling
+    app.use((err, req, res, next) => {
+      logger.error('API Error:', err.stack);
+      res.status(500).json({
+        error: 'Internal Server Error',
+        message: config.nodeEnv === 'development' ? err.message : undefined
+      });
+    });
+
+    // Start server
+    const server = app.listen(PORT, () => {
+      logger.info(`Server running in ${config.nodeEnv} mode on port ${PORT}`);
+    });
+
+    // Handle server errors
+    server.on('error', (error) => {
+      logger.error('Server error:', error);
+      fs.writeFileSync(
+        path.join(__dirname, '../../logs/server-error.log'),
+        `Server error at ${new Date().toISOString()}: ${error.message}\n${error.stack}\n`,
+        { flag: 'a' }
+      );
+    });
+
+    // Handle graceful shutdown
+    process.on('SIGTERM', gracefulShutdown);
+    process.on('SIGINT', gracefulShutdown);
+
+    function gracefulShutdown() {
+      logger.info('Received shutdown signal, closing server and database connections...');
+
+      server.close(() => {
+        logger.info('HTTP server closed');
+
+        // Close MongoDB connection
+        mongoose.connection.close(false)
+          .then(() => {
+            logger.info('MongoDB connection closed');
+            process.exit(0);
+          })
+          .catch(err => {
+            logger.error('Error closing MongoDB connection:', err);
+            process.exit(1);
+          });
+      });
+
+      // Force close if graceful shutdown takes too long
+      setTimeout(() => {
+        logger.error('Forced shutdown due to timeout');
+        process.exit(1);
+      }, 10000);
+    }
+  }
 
 } catch (error) {
   // Write error to file directly (in case logger module fails)
