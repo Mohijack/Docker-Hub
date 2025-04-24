@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>API Test</h1>
+    <p>This page tests the API connectivity.</p>
+    
+    <h2>Health Check</h2>
+    <button id="healthCheck">Test Health Check</button>
+    <pre id="healthResult">Results will appear here...</pre>
+    
+    <h2>Login Test</h2>
+    <button id="loginTest">Test Login</button>
+    <pre id="loginResult">Results will appear here...</pre>
+    
+    <script>
+        document.getElementById('healthCheck').addEventListener('click', async () => {
+            const resultElement = document.getElementById('healthResult');
+            resultElement.textContent = 'Testing...';
+            
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                resultElement.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                resultElement.textContent = `Error: ${error.message}`;
+            }
+        });
+        
+        document.getElementById('loginTest').addEventListener('click', async () => {
+            const resultElement = document.getElementById('loginResult');
+            resultElement.textContent = 'Testing...';
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@beyondfire.cloud',
+                        password: 'AdminPW!'
+                    }),
+                });
+                
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    const data = await response.json();
+                    resultElement.textContent = `Status: ${response.status}\nData: ${JSON.stringify(data, null, 2)}`;
+                } else {
+                    const text = await response.text();
+                    resultElement.textContent = `Status: ${response.status}\nResponse: ${text}`;
+                }
+            } catch (error) {
+                resultElement.textContent = `Error: ${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html>
