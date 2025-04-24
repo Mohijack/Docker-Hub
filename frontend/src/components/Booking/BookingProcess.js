@@ -90,8 +90,17 @@ function BookingProcess() {
         throw new Error(bookData.error || 'Failed to book service');
       }
 
+      // Extract booking ID from the response
+      const bookingId = bookData.booking?.id;
+
+      if (!bookingId) {
+        throw new Error('Keine Buchungs-ID in der Antwort gefunden');
+      }
+
+      console.log('Booking successful, ID:', bookingId);
+
       // Then, deploy the service
-      const deployResponse = await fetch(`/api/bookings/${bookData.bookingId}/deploy`, {
+      const deployResponse = await fetch(`/api/bookings/${bookingId}/deploy`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -101,7 +110,15 @@ function BookingProcess() {
       const deployData = await deployResponse.json();
 
       if (!deployResponse.ok) {
-        throw new Error(deployData.error || 'Failed to deploy service');
+        // If deployment fails, we still want to redirect to dashboard
+        // since the service was booked successfully
+        setError(`Deployment konnte nicht gestartet werden: ${deployData.error || 'Unbekannter Fehler'}. Sie werden zum Dashboard weitergeleitet, wo Sie den Deployment-Prozess erneut starten können.`);
+
+        // Redirect to dashboard after 5 seconds
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 5000);
+        return;
       }
 
       setSuccess('FE2-Service erfolgreich gebucht und wird bereitgestellt. Sie werden zum Dashboard weitergeleitet...');
@@ -112,7 +129,16 @@ function BookingProcess() {
       }, 3000);
 
     } catch (error) {
-      setError(error.message);
+      console.error('Error in deployment process:', error);
+
+      // Provide more helpful error messages
+      if (error.message.includes('Booking not found')) {
+        setError('Der Service wurde nicht gefunden. Bitte versuchen Sie es erneut oder kontaktieren Sie den Support.');
+      } else if (error.message.includes('Keine Buchungs-ID')) {
+        setError('Es gab ein Problem bei der Buchung des Services. Bitte versuchen Sie es erneut oder kontaktieren Sie den Support.');
+      } else {
+        setError(`Fehler: ${error.message}`);
+      }
     } finally {
       setLoading(false);
     }

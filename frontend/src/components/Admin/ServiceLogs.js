@@ -48,6 +48,11 @@ function ServiceLogs({ serviceId, serviceName, onClose }) {
       // Simulate API response
       let mockData = { logs: [] };
 
+      // Check if token exists
+      if (!token) {
+        throw new Error('Nicht authentifiziert. Bitte melden Sie sich erneut an.');
+      }
+
       try {
         // Try to fetch logs from the API, but handle JSON parsing errors gracefully
         const response = await fetch(`/api/admin/logs/service/${serviceId}`, {
@@ -67,9 +72,17 @@ function ServiceLogs({ serviceId, serviceName, onClose }) {
             console.error('Error parsing logs JSON:', parseError);
             // Continue with empty logs array if parsing fails
           }
+        } else if (response.status === 401 || response.status === 403) {
+          console.warn('Authentication error when fetching logs');
+          // Continue with mock data, but log the issue
         }
       } catch (fetchError) {
-        console.error('Error fetching logs:', fetchError);
+        // Handle network errors specifically
+        if (fetchError.name === 'TypeError' && fetchError.message.includes('Failed to fetch')) {
+          console.warn('Network error when fetching logs, using mock data instead');
+        } else {
+          console.error('Error fetching logs:', fetchError);
+        }
         // Continue with mock data if fetch fails
       }
 
@@ -95,9 +108,17 @@ function ServiceLogs({ serviceId, serviceName, onClose }) {
             console.error('Error parsing service JSON:', parseError);
             // Continue with default service type if parsing fails
           }
+        } else if (serviceResponse.status === 401 || serviceResponse.status === 403) {
+          console.warn('Authentication error when fetching service details');
+          // Continue with default service type, but log the issue
         }
       } catch (fetchError) {
-        console.error('Error fetching service details:', fetchError);
+        // Handle network errors specifically
+        if (fetchError.name === 'TypeError' && fetchError.message.includes('Failed to fetch')) {
+          console.warn('Network error when fetching service details, using default service type');
+        } else {
+          console.error('Error fetching service details:', fetchError);
+        }
         // Continue with default service type if fetch fails
       }
 

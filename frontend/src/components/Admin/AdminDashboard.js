@@ -25,21 +25,43 @@ function AdminDashboard() {
       setLoading(true);
       const token = localStorage.getItem('token');
 
-      const response = await fetch('/api/admin/services', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch services');
+      // Check if token exists
+      if (!token) {
+        throw new Error('Nicht authentifiziert. Bitte melden Sie sich erneut an.');
       }
 
-      const data = await response.json();
-      setServices(data.services);
-      setError('');
+      try {
+        const response = await fetch('/api/admin/services', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          if (response.status === 401 || response.status === 403) {
+            throw new Error('Nicht autorisiert. Bitte melden Sie sich erneut an.');
+          }
+          throw new Error('Fehler beim Abrufen der Services');
+        }
+
+        const data = await response.json();
+        setServices(data.services || []);
+        setError('');
+      } catch (fetchError) {
+        // Handle network errors specifically
+        if (fetchError.name === 'TypeError' && fetchError.message.includes('Failed to fetch')) {
+          throw new Error('Netzwerkfehler: Server nicht erreichbar. Bitte überprüfen Sie Ihre Verbindung.');
+        }
+        throw fetchError;
+      }
     } catch (error) {
+      console.error('Error in fetchServices:', error);
       setError(error.message);
+      // If services were previously loaded, keep them instead of showing an empty state
+      if (services.length === 0) {
+        // Set mock data for demonstration if needed
+        // setServices(mockServices);
+      }
     } finally {
       setLoading(false);
     }
