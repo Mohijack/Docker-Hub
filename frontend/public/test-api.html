@@ -11,7 +11,7 @@
             margin: 0 auto;
             padding: 20px;
         }
-        h1 {
+        h1, h2 {
             color: #333;
         }
         button {
@@ -31,51 +31,160 @@
             padding: 15px;
             border-radius: 4px;
             overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .header-section {
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+        .header-section h3 {
+            margin-bottom: 5px;
+        }
+        .header-value {
+            font-family: monospace;
+            background-color: #f9f9f9;
+            padding: 3px;
+            border-radius: 3px;
         }
     </style>
 </head>
 <body>
     <h1>API Test</h1>
-    <p>This page tests the API connectivity.</p>
-    
-    <h2>Health Check</h2>
-    <button id="healthCheck">Test Health Check</button>
-    <pre id="healthResult">Results will appear here...</pre>
-    
-    <h2>Login Test</h2>
-    <button id="loginTest">Test Login</button>
-    <pre id="loginResult">Results will appear here...</pre>
-    
+    <p>This page tests the API connectivity with detailed request and response information.</p>
+
+    <div class="test-section">
+        <h2>1. Health Check</h2>
+        <button id="healthCheck">Test Health Check</button>
+        <div class="header-section">
+            <h3>Request Headers:</h3>
+            <div id="healthRequestHeaders" class="header-value">Not sent yet</div>
+        </div>
+        <div class="header-section">
+            <h3>Response Headers:</h3>
+            <div id="healthResponseHeaders" class="header-value">Not received yet</div>
+        </div>
+        <h3>Response Body:</h3>
+        <pre id="healthResult">Results will appear here...</pre>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Login Test</h2>
+        <button id="loginTest">Test Login</button>
+        <div class="header-section">
+            <h3>Request Headers:</h3>
+            <div id="loginRequestHeaders" class="header-value">Not sent yet</div>
+        </div>
+        <div class="header-section">
+            <h3>Response Headers:</h3>
+            <div id="loginResponseHeaders" class="header-value">Not received yet</div>
+        </div>
+        <h3>Response Body:</h3>
+        <pre id="loginResult">Results will appear here...</pre>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Direct API Test</h2>
+        <p>This test bypasses Nginx and calls the API directly (only works if API is exposed).</p>
+        <button id="directApiTest">Test Direct API</button>
+        <div class="header-section">
+            <h3>Request Headers:</h3>
+            <div id="directRequestHeaders" class="header-value">Not sent yet</div>
+        </div>
+        <div class="header-section">
+            <h3>Response Headers:</h3>
+            <div id="directResponseHeaders" class="header-value">Not received yet</div>
+        </div>
+        <h3>Response Body:</h3>
+        <pre id="directResult">Results will appear here...</pre>
+    </div>
+
     <script>
+        // Helper function to display headers
+        function formatHeaders(headers) {
+            let result = '';
+            for (const [key, value] of headers.entries()) {
+                result += `${key}: ${value}\n`;
+            }
+            return result || 'No headers';
+        }
+
+        // Health Check Test
         document.getElementById('healthCheck').addEventListener('click', async () => {
             const resultElement = document.getElementById('healthResult');
+            const requestHeadersElement = document.getElementById('healthRequestHeaders');
+            const responseHeadersElement = document.getElementById('healthResponseHeaders');
+
             resultElement.textContent = 'Testing...';
-            
+            requestHeadersElement.textContent = 'Sending request...';
+            responseHeadersElement.textContent = 'Waiting for response...';
+
             try {
-                const response = await fetch('/api/health');
+                // Create request headers
+                const headers = new Headers();
+                headers.append('Accept', 'application/json');
+
+                // Display request headers
+                requestHeadersElement.textContent = formatHeaders(headers);
+
+                // Send request
+                const response = await fetch('/api/health', {
+                    headers: headers
+                });
+
+                // Display response headers
+                responseHeadersElement.textContent = formatHeaders(response.headers);
+
+                // Display response body
                 const data = await response.json();
                 resultElement.textContent = JSON.stringify(data, null, 2);
             } catch (error) {
                 resultElement.textContent = `Error: ${error.message}`;
+                responseHeadersElement.textContent = 'Error occurred';
             }
         });
-        
+
+        // Login Test
         document.getElementById('loginTest').addEventListener('click', async () => {
             const resultElement = document.getElementById('loginResult');
+            const requestHeadersElement = document.getElementById('loginRequestHeaders');
+            const responseHeadersElement = document.getElementById('loginResponseHeaders');
+
             resultElement.textContent = 'Testing...';
-            
+            requestHeadersElement.textContent = 'Sending request...';
+            responseHeadersElement.textContent = 'Waiting for response...';
+
             try {
+                // Create request headers
+                const headers = new Headers();
+                headers.append('Content-Type', 'application/json');
+                headers.append('Accept', 'application/json');
+
+                // Create request body
+                const body = JSON.stringify({
+                    email: 'admin@beyondfire.cloud',
+                    password: 'AdminPW!'
+                });
+
+                // Display request headers
+                requestHeadersElement.textContent = formatHeaders(headers) + '\n\nBody: ' + body;
+
+                // Send request
                 const response = await fetch('/api/auth/login', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        email: 'admin@beyondfire.cloud',
-                        password: 'AdminPW!'
-                    }),
+                    headers: headers,
+                    body: body
                 });
-                
+
+                // Display response headers
+                responseHeadersElement.textContent = formatHeaders(response.headers);
+
+                // Display response body
                 const contentType = response.headers.get('content-type');
                 if (contentType && contentType.includes('application/json')) {
                     const data = await response.json();
@@ -86,6 +195,57 @@
                 }
             } catch (error) {
                 resultElement.textContent = `Error: ${error.message}`;
+                responseHeadersElement.textContent = 'Error occurred';
+            }
+        });
+
+        // Direct API Test
+        document.getElementById('directApiTest').addEventListener('click', async () => {
+            const resultElement = document.getElementById('directResult');
+            const requestHeadersElement = document.getElementById('directRequestHeaders');
+            const responseHeadersElement = document.getElementById('directResponseHeaders');
+
+            resultElement.textContent = 'Testing...';
+            requestHeadersElement.textContent = 'Sending request...';
+            responseHeadersElement.textContent = 'Waiting for response...';
+
+            try {
+                // Create request headers
+                const headers = new Headers();
+                headers.append('Content-Type', 'application/json');
+                headers.append('Accept', 'application/json');
+
+                // Create request body
+                const body = JSON.stringify({
+                    email: 'admin@beyondfire.cloud',
+                    password: 'AdminPW!'
+                });
+
+                // Display request headers
+                requestHeadersElement.textContent = formatHeaders(headers) + '\n\nBody: ' + body;
+
+                // Send request directly to API port
+                const response = await fetch('http://192.168.200.170:3000/api/auth/login', {
+                    method: 'POST',
+                    headers: headers,
+                    body: body
+                });
+
+                // Display response headers
+                responseHeadersElement.textContent = formatHeaders(response.headers);
+
+                // Display response body
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    const data = await response.json();
+                    resultElement.textContent = `Status: ${response.status}\nData: ${JSON.stringify(data, null, 2)}`;
+                } else {
+                    const text = await response.text();
+                    resultElement.textContent = `Status: ${response.status}\nResponse: ${text}`;
+                }
+            } catch (error) {
+                resultElement.textContent = `Error: ${error.message}`;
+                responseHeadersElement.textContent = 'Error occurred';
             }
         });
     </script>
