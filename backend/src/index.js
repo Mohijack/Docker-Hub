@@ -385,10 +385,11 @@ try {
           });
         }
 
-        // Create admin user
+        // Create admin user with direct password hash (bypassing the pre-save hook)
         const adminUser = new User({
           email: 'admin@beyondfire.cloud',
-          password: 'AdminPW!',
+          // Direct hash for 'AdminPW!' - bypassing the pre-save hook
+          password: '$argon2id$v=19$m=65536,t=3,p=1$tnFQzxFRMuYPJUOLlJQMYQ$3Gg9PJSGSKGjEmKvx7b0yNGNGFHXpZ4IGIvYZjAOvFo',
           name: 'Admin',
           role: 'admin',
           permissions: [

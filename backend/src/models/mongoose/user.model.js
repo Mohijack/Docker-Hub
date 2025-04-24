@@ -174,6 +174,9 @@ userSchema.pre('save', async function(next) {
   // Only hash the password if it has been modified (or is new)
   if (!this.isModified('password')) return next();
 
+  // Skip hashing if the password is already hashed (starts with $argon2id$)
+  if (this.password.startsWith('$argon2id$')) return next();
+
   try {
     // Generate a hash using argon2id (balanced between argon2i and argon2d)
     this.password = await argon2.hash(this.password, {
