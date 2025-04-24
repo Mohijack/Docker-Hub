@@ -89,7 +89,39 @@
     </div>
 
     <div class="test-section">
-        <h2>3. Direct API Test</h2>
+        <h2>3. Test API Routes</h2>
+        <p>This test checks if the API routes are working correctly.</p>
+        <button id="testApiRoutes">Test API Routes</button>
+        <div class="header-section">
+            <h3>Request Headers:</h3>
+            <div id="testApiRequestHeaders" class="header-value">Not sent yet</div>
+        </div>
+        <div class="header-section">
+            <h3>Response Headers:</h3>
+            <div id="testApiResponseHeaders" class="header-value">Not received yet</div>
+        </div>
+        <h3>Response Body:</h3>
+        <pre id="testApiResult">Results will appear here...</pre>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Test Auth Routes</h2>
+        <p>This test checks if the auth routes are working correctly.</p>
+        <button id="testAuthRoutes">Test Auth Routes</button>
+        <div class="header-section">
+            <h3>Request Headers:</h3>
+            <div id="testAuthRequestHeaders" class="header-value">Not sent yet</div>
+        </div>
+        <div class="header-section">
+            <h3>Response Headers:</h3>
+            <div id="testAuthResponseHeaders" class="header-value">Not received yet</div>
+        </div>
+        <h3>Response Body:</h3>
+        <pre id="testAuthResult">Results will appear here...</pre>
+    </div>
+
+    <div class="test-section">
+        <h2>5. Direct API Test</h2>
         <p>This test bypasses Nginx and calls the API directly (only works if API is exposed).</p>
         <button id="directApiTest">Test Direct API</button>
         <div class="header-section">
@@ -180,6 +212,84 @@
                     headers: headers,
                     body: body
                 });
+
+                // Display response headers
+                responseHeadersElement.textContent = formatHeaders(response.headers);
+
+                // Display response body
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    const data = await response.json();
+                    resultElement.textContent = `Status: ${response.status}\nData: ${JSON.stringify(data, null, 2)}`;
+                } else {
+                    const text = await response.text();
+                    resultElement.textContent = `Status: ${response.status}\nResponse: ${text}`;
+                }
+            } catch (error) {
+                resultElement.textContent = `Error: ${error.message}`;
+                responseHeadersElement.textContent = 'Error occurred';
+            }
+        });
+
+        // Test API Routes
+        document.getElementById('testApiRoutes').addEventListener('click', async () => {
+            const resultElement = document.getElementById('testApiResult');
+            const requestHeadersElement = document.getElementById('testApiRequestHeaders');
+            const responseHeadersElement = document.getElementById('testApiResponseHeaders');
+
+            resultElement.textContent = 'Testing...';
+            requestHeadersElement.textContent = 'Sending request...';
+            responseHeadersElement.textContent = 'Waiting for response...';
+
+            try {
+                // Create request headers
+                const headers = new Headers();
+                headers.append('Accept', 'application/json');
+
+                // Display request headers
+                requestHeadersElement.textContent = formatHeaders(headers);
+
+                // Send request
+                const response = await fetch('/api/test');
+
+                // Display response headers
+                responseHeadersElement.textContent = formatHeaders(response.headers);
+
+                // Display response body
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    const data = await response.json();
+                    resultElement.textContent = `Status: ${response.status}\nData: ${JSON.stringify(data, null, 2)}`;
+                } else {
+                    const text = await response.text();
+                    resultElement.textContent = `Status: ${response.status}\nResponse: ${text}`;
+                }
+            } catch (error) {
+                resultElement.textContent = `Error: ${error.message}`;
+                responseHeadersElement.textContent = 'Error occurred';
+            }
+        });
+
+        // Test Auth Routes
+        document.getElementById('testAuthRoutes').addEventListener('click', async () => {
+            const resultElement = document.getElementById('testAuthResult');
+            const requestHeadersElement = document.getElementById('testAuthRequestHeaders');
+            const responseHeadersElement = document.getElementById('testAuthResponseHeaders');
+
+            resultElement.textContent = 'Testing...';
+            requestHeadersElement.textContent = 'Sending request...';
+            responseHeadersElement.textContent = 'Waiting for response...';
+
+            try {
+                // Create request headers
+                const headers = new Headers();
+                headers.append('Accept', 'application/json');
+
+                // Display request headers
+                requestHeadersElement.textContent = formatHeaders(headers);
+
+                // Send request
+                const response = await fetch('/api/auth/test');
 
                 // Display response headers
                 responseHeadersElement.textContent = formatHeaders(response.headers);

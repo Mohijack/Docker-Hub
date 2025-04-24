@@ -52,6 +52,10 @@ try {
     const app = express();
     const PORT = config.port || 3000;
 
+    // Trust proxy - required for express-rate-limit to work correctly behind Nginx
+    app.set('trust proxy', true);
+    logger.info('Express trust proxy setting enabled');
+
     // Middleware
     app.use(helmet());
     app.use(cors());
