@@ -5,6 +5,13 @@
   height: 100%;
   background-color: var(--card-bg);
   color: var(--text);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+[data-theme="dark"] .log-viewer {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
 .log-viewer-header {
@@ -168,6 +175,11 @@
   transition: all 0.2s ease;
 }
 
+[data-theme="dark"] .level-select {
+  border-color: var(--border-dark);
+  background-color: var(--card-bg-secondary);
+}
+
 .level-select:focus {
   outline: none;
   border-color: var(--primary);
@@ -190,6 +202,11 @@
   transition: all 0.2s ease;
 }
 
+[data-theme="dark"] .filter-input {
+  border-color: var(--border-dark);
+  background-color: var(--card-bg-secondary);
+}
+
 .filter-input:focus {
   outline: none;
   border-color: var(--primary);
@@ -206,6 +223,11 @@
   background-color: var(--background);
 }
 
+[data-theme="dark"] .logs-container {
+  border-color: var(--border-dark);
+  background-color: var(--background-dark);
+}
+
 .logs-output {
   height: 100%;
   overflow-y: auto;
@@ -215,6 +237,35 @@
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-all;
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary) var(--card-bg);
+}
+
+.logs-output::-webkit-scrollbar {
+  width: 8px;
+}
+
+.logs-output::-webkit-scrollbar-track {
+  background: var(--card-bg);
+}
+
+.logs-output::-webkit-scrollbar-thumb {
+  background-color: var(--primary);
+  border-radius: 4px;
+  border: 2px solid var(--card-bg);
+}
+
+[data-theme="dark"] .logs-output {
+  scrollbar-color: var(--primary-light) var(--card-bg-secondary);
+}
+
+[data-theme="dark"] .logs-output::-webkit-scrollbar-track {
+  background: var(--card-bg-secondary);
+}
+
+[data-theme="dark"] .logs-output::-webkit-scrollbar-thumb {
+  background-color: var(--primary-light);
+  border: 2px solid var(--card-bg-secondary);
 }
 
 .log-line {
@@ -224,6 +275,10 @@
   background-color: var(--card-bg);
   display: flex;
   align-items: flex-start;
+}
+
+[data-theme="dark"] .log-line {
+  background-color: var(--card-bg-secondary);
 }
 
 .log-timestamp {
@@ -289,7 +344,8 @@
 }
 
 [data-theme="dark"] .log-error {
-  background-color: rgba(244, 67, 54, 0.15);
+  background-color: rgba(244, 67, 54, 0.2);
+  border-left: 3px solid rgba(244, 67, 54, 0.8);
 }
 
 [data-theme="dark"] .log-error .log-level {
@@ -297,7 +353,8 @@
 }
 
 [data-theme="dark"] .log-warning {
-  background-color: rgba(255, 193, 7, 0.15);
+  background-color: rgba(255, 193, 7, 0.2);
+  border-left: 3px solid rgba(255, 193, 7, 0.8);
 }
 
 [data-theme="dark"] .log-warning .log-level {
@@ -305,7 +362,8 @@
 }
 
 [data-theme="dark"] .log-info {
-  background-color: rgba(33, 150, 243, 0.15);
+  background-color: rgba(33, 150, 243, 0.2);
+  border-left: 3px solid rgba(33, 150, 243, 0.8);
 }
 
 [data-theme="dark"] .log-info .log-level {
@@ -313,7 +371,8 @@
 }
 
 [data-theme="dark"] .log-debug {
-  background-color: rgba(158, 158, 158, 0.15);
+  background-color: rgba(158, 158, 158, 0.2);
+  border-left: 3px solid rgba(158, 158, 158, 0.8);
 }
 
 [data-theme="dark"] .log-debug .log-level {
