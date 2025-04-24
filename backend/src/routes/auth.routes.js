@@ -15,6 +15,16 @@ const {
 const { logger } = require('../utils/logger');
 
 /**
+ * @route   GET /api/auth/test
+ * @desc    Test auth route
+ * @access  Public
+ */
+router.get('/test', (req, res) => {
+  logger.info('Auth test route accessed');
+  res.json({ message: 'Auth routes are working correctly' });
+});
+
+/**
  * @route   POST /api/auth/register
  * @desc    Register a new user
  * @access  Public

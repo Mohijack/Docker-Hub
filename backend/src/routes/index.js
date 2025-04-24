@@ -12,6 +12,11 @@ router.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Test endpoint
+router.get('/test', (req, res) => {
+  res.json({ message: 'API routes are working correctly' });
+});
+
 // Mount routes
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
