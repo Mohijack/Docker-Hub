@@ -1,16 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const authService = require('../services/auth.service');
-const { 
-  authLimiter, 
-  registerValidation, 
-  loginValidation, 
+const {
+  authLimiter,
+  registerValidation,
+  loginValidation,
   resetPasswordValidation,
   twoFactorValidation
 } = require('../middleware/security.middleware');
-const { 
-  authenticateToken, 
-  validateRefreshToken 
+const {
+  authenticateToken,
+  validateRefreshToken
 } = require('../middleware/auth.middleware');
 const { logger } = require('../utils/logger');
 
@@ -22,18 +22,18 @@ const { logger } = require('../utils/logger');
 router.post('/register', authLimiter, registerValidation, async (req, res) => {
   try {
     const { email, password, name, company } = req.body;
-    
+
     const result = await authService.register({
       email,
       password,
       name,
       company
     });
-    
+
     if (!result.success) {
       return res.status(400).json({ error: result.message });
     }
-    
+
     res.status(201).json({
       message: 'Registration successful',
       user: result.user
@@ -54,13 +54,13 @@ router.post('/login', authLimiter, loginValidation, async (req, res) => {
     const { email, password } = req.body;
     const userAgent = req.headers['user-agent'] || 'Unknown';
     const ipAddress = req.ip;
-    
+
     const result = await authService.login(email, password, userAgent, ipAddress);
-    
+
     if (!result.success) {
       return res.status(401).json({ error: result.message });
     }
-    
+
     // Check if 2FA is required
     if (result.require2FA) {
       return res.status(200).json({
@@ -68,7 +68,7 @@ router.post('/login', authLimiter, loginValidation, async (req, res) => {
         tempToken: result.tempToken
       });
     }
-    
+
     // Set refresh token as HTTP-only cookie
     res.cookie('refreshToken', result.refreshToken, {
       httpOnly: true,
@@ -76,11 +76,11 @@ router.post('/login', authLimiter, loginValidation, async (req, res) => {
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
-    
+
     res.json({
       message: 'Login successful',
       user: result.user,
-      token: result.accessToken
+      accessToken: result.accessToken
     });
   } catch (error) {
     logger.error('Login error:', error);
@@ -96,13 +96,13 @@ router.post('/login', authLimiter, loginValidation, async (req, res) => {
 router.post('/verify-2fa', authLimiter, twoFactorValidation, async (req, res) => {
   try {
     const { token, tempToken } = req.body;
-    
+
     const result = await authService.verify2FA(tempToken, token);
-    
+
     if (!result.success) {
       return res.status(401).json({ error: result.message });
     }
-    
+
     // Set refresh token as HTTP-only cookie
     res.cookie('refreshToken', result.refreshToken, {
       httpOnly: true,
@@ -110,11 +110,11 @@ router.post('/verify-2fa', authLimiter, twoFactorValidation, async (req, res) =>
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
-    
+
     res.json({
       message: '2FA verification successful',
       user: result.user,
-      token: result.accessToken
+      accessToken: result.accessToken
     });
   } catch (error) {
     logger.error('2FA verification error:', error);
@@ -132,13 +132,13 @@ router.post('/refresh-token', validateRefreshToken, async (req, res) => {
     const refreshToken = req.refreshToken;
     const userAgent = req.headers['user-agent'] || 'Unknown';
     const ipAddress = req.ip;
-    
+
     const result = await authService.refreshToken(refreshToken, userAgent, ipAddress);
-    
+
     if (!result.success) {
       return res.status(401).json({ error: result.message });
     }
-    
+
     // Set new refresh token as HTTP-only cookie
     res.cookie('refreshToken', result.refreshToken, {
       httpOnly: true,
@@ -146,9 +146,9 @@ router.post('/refresh-token', validateRefreshToken, async (req, res) => {
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
-    
+
     res.json({
-      token: result.accessToken
+      accessToken: result.accessToken
     });
   } catch (error) {
     logger.error('Token refresh error:', error);
@@ -164,16 +164,16 @@ router.post('/refresh-token', validateRefreshToken, async (req, res) => {
 router.post('/logout', authenticateToken, async (req, res) => {
   try {
     const refreshToken = req.cookies?.refreshToken || req.body.refreshToken;
-    
+
     if (!refreshToken) {
       return res.status(200).json({ message: 'Logged out' });
     }
-    
+
     await authService.logout(refreshToken);
-    
+
     // Clear refresh token cookie
     res.clearCookie('refreshToken');
-    
+
     res.json({ message: 'Logged out successfully' });
   } catch (error) {
     logger.error('Logout error:', error);
@@ -189,11 +189,11 @@ router.post('/logout', authenticateToken, async (req, res) => {
 router.post('/setup-2fa', authenticateToken, async (req, res) => {
   try {
     const result = await authService.setup2FA(req.user._id);
-    
+
     if (!result.success) {
       return res.status(400).json({ error: result.message });
     }
-    
+
     res.json({
       secret: result.secret,
       qrCode: result.qrCode
@@ -212,13 +212,13 @@ router.post('/setup-2fa', authenticateToken, async (req, res) => {
 router.post('/enable-2fa', authenticateToken, twoFactorValidation, async (req, res) => {
   try {
     const { token } = req.body;
-    
+
     const result = await authService.enable2FA(req.user._id, token);
-    
+
     if (!result.success) {
       return res.status(400).json({ error: result.message });
     }
-    
+
     res.json({
       message: '2FA enabled successfully',
       backupCodes: result.backupCodes
@@ -237,13 +237,13 @@ router.post('/enable-2fa', authenticateToken, twoFactorValidation, async (req, r
 router.post('/disable-2fa', authenticateToken, twoFactorValidation, async (req, res) => {
   try {
     const { token } = req.body;
-    
+
     const result = await authService.disable2FA(req.user._id, token);
-    
+
     if (!result.success) {
       return res.status(400).json({ error: result.message });
     }
-    
+
     res.json({
       message: '2FA disabled successfully'
     });
@@ -261,13 +261,13 @@ router.post('/disable-2fa', authenticateToken, twoFactorValidation, async (req, 
 router.post('/forgot-password', authLimiter, async (req, res) => {
   try {
     const { email } = req.body;
-    
+
     if (!email) {
       return res.status(400).json({ error: 'Email is required' });
     }
-    
+
     const result = await authService.requestPasswordReset(email);
-    
+
     // Always return success to prevent email enumeration
     res.json({
       message: 'If your email is registered, you will receive a password reset link'
@@ -286,13 +286,13 @@ router.post('/forgot-password', authLimiter, async (req, res) => {
 router.post('/reset-password', authLimiter, resetPasswordValidation, async (req, res) => {
   try {
     const { token, password } = req.body;
-    
+
     const result = await authService.resetPassword(token, password);
-    
+
     if (!result.success) {
       return res.status(400).json({ error: result.message });
     }
-    
+
     res.json({
       message: 'Password reset successful'
     });
@@ -310,17 +310,17 @@ router.post('/reset-password', authLimiter, resetPasswordValidation, async (req,
 router.post('/change-password', authenticateToken, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
-    
+
     if (!currentPassword || !newPassword) {
       return res.status(400).json({ error: 'Current password and new password are required' });
     }
-    
+
     const result = await authService.changePassword(req.user._id, currentPassword, newPassword);
-    
+
     if (!result.success) {
       return res.status(400).json({ error: result.message });
     }
-    
+
     res.json({
       message: 'Password changed successfully'
     });
