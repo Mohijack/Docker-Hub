@@ -39,6 +39,16 @@ if (!dbExists) {
     name: 'Admin',
     password: '$argon2id$v=19$m=65536,t=3,p=1$tnFQzxFRMuYPJUOLlJQMYQ$3Gg9PJSGSKGjEmKvx7b0yNGNGFHXpZ4IGIvYZjAOvFo', // AdminPW!
     role: 'admin',
+    permissions: [
+      // User permissions
+      'user:read', 'user:create', 'user:update', 'user:delete',
+      // Service permissions
+      'service:read', 'service:create', 'service:update', 'service:delete',
+      // Booking permissions
+      'booking:read', 'booking:create', 'booking:update', 'booking:delete',
+      // Admin permissions
+      'admin:access', 'admin:logs', 'admin:settings'
+    ],
     createdAt: new Date(),
     updatedAt: new Date()
   });
