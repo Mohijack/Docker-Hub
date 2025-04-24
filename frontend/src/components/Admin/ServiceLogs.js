@@ -92,7 +92,13 @@ function ServiceLogs({ serviceId, serviceName, onClose }) {
       // Filter logs by level if specified
       const logsToCopy = level === 'all'
         ? filteredLogs
-        : filteredLogs.filter(log => getLogLevelClass(log).includes(level));
+        : filteredLogs.filter(log => {
+            const logLevel = log.level;
+            return level === 'error' && logLevel === 'ERROR' ||
+                   level === 'warning' && logLevel === 'WARNING' ||
+                   level === 'info' && logLevel === 'INFO' ||
+                   level === 'debug' && logLevel === 'DEBUG';
+          });
 
       // Format logs for clipboard
       const formattedLogs = logsToCopy.map(log =>
@@ -120,6 +126,10 @@ function ServiceLogs({ serviceId, serviceName, onClose }) {
       case 'INFO': return 'log-info';
       default: return '';
     }
+  };
+
+  const getLogLevel = (log) => {
+    return log.level || 'INFO';
   };
 
   const filteredLogs = logs.filter(log => {
