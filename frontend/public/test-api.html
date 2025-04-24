@@ -210,7 +210,9 @@
                 const response = await fetch('/api/auth/login', {
                     method: 'POST',
                     headers: headers,
-                    body: body
+                    body: body,
+                    // Add cache-busting parameter to prevent caching
+                    cache: 'no-cache'
                 });
 
                 // Display response headers
@@ -250,7 +252,11 @@
                 requestHeadersElement.textContent = formatHeaders(headers);
 
                 // Send request
-                const response = await fetch('/api/test');
+                const response = await fetch('/api/test', {
+                    headers: headers,
+                    // Add cache-busting parameter to prevent caching
+                    cache: 'no-cache'
+                });
 
                 // Display response headers
                 responseHeadersElement.textContent = formatHeaders(response.headers);
@@ -289,7 +295,11 @@
                 requestHeadersElement.textContent = formatHeaders(headers);
 
                 // Send request
-                const response = await fetch('/api/auth/test');
+                const response = await fetch('/api/auth/test', {
+                    headers: headers,
+                    // Add cache-busting parameter to prevent caching
+                    cache: 'no-cache'
+                });
 
                 // Display response headers
                 responseHeadersElement.textContent = formatHeaders(response.headers);
@@ -334,11 +344,36 @@
                 // Display request headers
                 requestHeadersElement.textContent = formatHeaders(headers) + '\n\nBody: ' + body;
 
+                // Try the test API on port 3001 first
+                try {
+                    const testResponse = await fetch('http://192.168.200.170:3001/login', {
+                        method: 'POST',
+                        headers: headers,
+                        body: body,
+                        cache: 'no-cache'
+                    });
+
+                    // Display response headers
+                    responseHeadersElement.textContent = formatHeaders(testResponse.headers);
+
+                    // Display response body
+                    const contentType = testResponse.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        const data = await testResponse.json();
+                        resultElement.textContent = `Status: ${testResponse.status}\nData: ${JSON.stringify(data, null, 2)}\n\nUsing test API on port 3001`;
+                        return;
+                    }
+                } catch (testError) {
+                    console.log('Test API not available:', testError);
+                    // Continue with the regular API
+                }
+
                 // Send request directly to API port
                 const response = await fetch('http://192.168.200.170:3000/api/auth/login', {
                     method: 'POST',
                     headers: headers,
-                    body: body
+                    body: body,
+                    cache: 'no-cache'
                 });
 
                 // Display response headers
