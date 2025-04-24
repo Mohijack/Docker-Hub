@@ -10,7 +10,9 @@ function ServiceLogs({ serviceId, serviceName, onClose }) {
   const [filterLevel, setFilterLevel] = useState('all');
   const [searchText, setSearchText] = useState('');
   const [copySuccess, setCopySuccess] = useState('');
+  const [autoScroll, setAutoScroll] = useState(true);
   const logsEndRef = useRef(null);
+  const logsContainerRef = useRef(null);
 
   useEffect(() => {
     fetchLogs();
@@ -34,8 +36,33 @@ function ServiceLogs({ serviceId, serviceName, onClose }) {
   }, [autoRefresh, serviceId]);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [logs]);
+    if (autoScroll) {
+      scrollToBottom();
+    }
+  }, [logs, autoScroll]);
+
+  // Add event listener to detect manual scrolling
+  useEffect(() => {
+    const logsOutput = logsContainerRef.current;
+    if (!logsOutput) return;
+
+    const handleScroll = () => {
+      // Check if user has scrolled up (not at bottom)
+      const isAtBottom = Math.abs(
+        logsOutput.scrollHeight - logsOutput.clientHeight - logsOutput.scrollTop
+      ) < 50; // Allow small margin of error
+
+      // Only change autoScroll if it's currently true and user scrolled up
+      if (autoScroll && !isAtBottom) {
+        setAutoScroll(false);
+      }
+    };
+
+    logsOutput.addEventListener('scroll', handleScroll);
+    return () => {
+      logsOutput.removeEventListener('scroll', handleScroll);
+    };
+  }, [autoScroll]);
 
   const fetchLogs = async () => {
     try {
@@ -213,6 +240,16 @@ function ServiceLogs({ serviceId, serviceName, onClose }) {
     setAutoRefresh(!autoRefresh);
   };
 
+  const toggleAutoScroll = () => {
+    const newAutoScrollState = !autoScroll;
+    setAutoScroll(newAutoScrollState);
+
+    // If turning auto-scroll back on, immediately scroll to bottom
+    if (newAutoScrollState) {
+      scrollToBottom();
+    }
+  };
+
   const scrollToBottom = () => {
     logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -304,10 +341,22 @@ function ServiceLogs({ serviceId, serviceName, onClose }) {
             <button
               className={`refresh-button ${autoRefresh ? 'active' : ''}`}
               onClick={toggleAutoRefresh}
+              title={autoRefresh ? "Auto-Refresh deaktivieren" : "Auto-Refresh aktivieren"}
             >
               {autoRefresh ? 'Auto-Refresh An' : 'Auto-Refresh Aus'}
             </button>
-            <button className="refresh-button" onClick={fetchLogs}>
+            <button
+              className={`refresh-button ${autoScroll ? 'active' : ''}`}
+              onClick={toggleAutoScroll}
+              title={autoScroll ? "Auto-Scroll deaktivieren" : "Auto-Scroll aktivieren"}
+            >
+              {autoScroll ? 'Auto-Scroll An' : 'Auto-Scroll Aus'}
+            </button>
+            <button
+              className="refresh-button"
+              onClick={fetchLogs}
+              title="Logs manuell aktualisieren"
+            >
               <span className="refresh-icon">&#x21bb;</span> Aktualisieren
             </button>
           </div>
@@ -352,7 +401,7 @@ function ServiceLogs({ serviceId, serviceName, onClose }) {
               {searchText || filterLevel !== 'all' ? 'Keine Logs gefunden, die den Filterkriterien entsprechen' : 'Keine Logs verfügbar'}
             </div>
           ) : (
-            <div className="logs-output">
+            <div className="logs-output" ref={logsContainerRef}>
               {filteredLogs.map((log, index) => (
                 <div
                   key={index}

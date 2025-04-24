@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './LogViewer.css';
+import ServiceLogs from './ServiceLogs';
 
 function LogViewer() {
   const [logType, setLogType] = useState('frontend');
@@ -13,7 +14,11 @@ function LogViewer() {
   const [filterText, setFilterText] = useState('');
   const [filterLevel, setFilterLevel] = useState('all');
   const [copySuccess, setCopySuccess] = useState('');
+  const [autoScroll, setAutoScroll] = useState(true);
+  const [showServiceLogs, setShowServiceLogs] = useState(false);
+  const [selectedServiceName, setSelectedServiceName] = useState('');
   const logsEndRef = useRef(null);
+  const logsContainerRef = useRef(null);
 
   useEffect(() => {
     fetchLogs();
@@ -38,8 +43,33 @@ function LogViewer() {
   }, [autoRefresh, logType, selectedService]);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [logs]);
+    if (autoScroll) {
+      scrollToBottom();
+    }
+  }, [logs, autoScroll]);
+
+  // Add event listener to detect manual scrolling
+  useEffect(() => {
+    const logsOutput = logsContainerRef.current;
+    if (!logsOutput) return;
+
+    const handleScroll = () => {
+      // Check if user has scrolled up (not at bottom)
+      const isAtBottom = Math.abs(
+        logsOutput.scrollHeight - logsOutput.clientHeight - logsOutput.scrollTop
+      ) < 50; // Allow small margin of error
+
+      // Only change autoScroll if it's currently true and user scrolled up
+      if (autoScroll && !isAtBottom) {
+        setAutoScroll(false);
+      }
+    };
+
+    logsOutput.addEventListener('scroll', handleScroll);
+    return () => {
+      logsOutput.removeEventListener('scroll', handleScroll);
+    };
+  }, [autoScroll]);
 
   const fetchServices = async () => {
     try {
@@ -168,13 +198,45 @@ function LogViewer() {
     setAutoRefresh(!autoRefresh);
   };
 
+  const toggleAutoScroll = () => {
+    const newAutoScrollState = !autoScroll;
+    setAutoScroll(newAutoScrollState);
+
+    // If turning auto-scroll back on, immediately scroll to bottom
+    if (newAutoScrollState) {
+      scrollToBottom();
+    }
+  };
+
   const handleLogTypeChange = (type) => {
     setLogType(type);
     setSelectedService('');
+    setShowServiceLogs(false);
   };
 
   const handleServiceChange = (e) => {
-    setSelectedService(e.target.value);
+    const serviceId = e.target.value;
+    setSelectedService(serviceId);
+
+    // Find the service name for the selected service
+    if (serviceId) {
+      const service = services.find(s => s.id === serviceId);
+      if (service) {
+        setSelectedServiceName(service.customName);
+      }
+    }
+  };
+
+  const openServiceLogs = () => {
+    if (selectedService) {
+      setShowServiceLogs(true);
+    } else {
+      setError('Bitte wählen Sie zuerst einen Service aus.');
+    }
+  };
+
+  const closeServiceLogs = () => {
+    setShowServiceLogs(false);
   };
 
   const scrollToBottom = () => {
@@ -277,10 +339,22 @@ function LogViewer() {
           <button
             className={`refresh-button ${autoRefresh ? 'active' : ''}`}
             onClick={toggleAutoRefresh}
+            title={autoRefresh ? "Auto-Refresh deaktivieren" : "Auto-Refresh aktivieren"}
           >
             {autoRefresh ? 'Auto-Refresh An' : 'Auto-Refresh Aus'}
           </button>
-          <button className="refresh-button" onClick={fetchLogs}>
+          <button
+            className={`refresh-button ${autoScroll ? 'active' : ''}`}
+            onClick={toggleAutoScroll}
+            title={autoScroll ? "Auto-Scroll deaktivieren" : "Auto-Scroll aktivieren"}
+          >
+            {autoScroll ? 'Auto-Scroll An' : 'Auto-Scroll Aus'}
+          </button>
+          <button
+            className="refresh-button"
+            onClick={fetchLogs}
+            title="Logs manuell aktualisieren"
+          >
             <span className="refresh-icon">&#x21bb;</span> Aktualisieren
           </button>
         </div>
@@ -324,6 +398,14 @@ function LogViewer() {
                     </option>
                   ))}
                 </select>
+                <button
+                  className="view-logs-button"
+                  onClick={openServiceLogs}
+                  disabled={!selectedService}
+                  title="Detaillierte Service-Logs anzeigen"
+                >
+                  Detaillierte Logs
+                </button>
               </div>
             )}
 
@@ -365,7 +447,7 @@ function LogViewer() {
             {filterText ? 'Keine Logs gefunden, die dem Filter entsprechen' : 'Keine Logs verfügbar'}
           </div>
         ) : (
-          <div className="logs-output">
+          <div className="logs-output" ref={logsContainerRef}>
             {filteredLogs.map((log, index) => (
               <div
                 key={index}
@@ -422,6 +504,15 @@ function LogViewer() {
         </div>
       </div>
     </div>
+
+    {/* Service Logs Modal */}
+    {showServiceLogs && selectedService && (
+      <ServiceLogs
+        serviceId={selectedService}
+        serviceName={selectedServiceName}
+        onClose={closeServiceLogs}
+      />
+    )}
   );
 }
 
