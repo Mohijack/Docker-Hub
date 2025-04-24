@@ -225,7 +225,7 @@
                 requestHeadersElement.textContent = formatHeaders(headers) + '\n\nBody: ' + body;
 
                 // Send request directly to API port
-                const response = await fetch('http://192.168.200.170:3000/api/auth/login', {
+                const response = await fetch('http://192.168.200.170:3000/auth/login', {
                     method: 'POST',
                     headers: headers,
                     body: body
