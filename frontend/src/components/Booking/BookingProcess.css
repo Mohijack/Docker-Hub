@@ -246,6 +246,70 @@
   margin-bottom: 0;
 }
 
+/* Deployment Summary Styles */
+.deployment-summary {
+  background-color: var(--card-bg-secondary);
+  padding: 25px;
+  border-radius: 10px;
+  margin: 20px 0;
+  border-left: 4px solid var(--primary);
+}
+
+.deployment-summary h3 {
+  color: var(--foreground);
+  font-size: 20px;
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+.summary-item {
+  display: flex;
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid var(--border);
+}
+
+.summary-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.summary-label {
+  font-weight: 600;
+  width: 150px;
+  color: var(--text-light);
+}
+
+.summary-value {
+  flex: 1;
+  color: var(--text);
+}
+
+.status-deployed {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.status-deployment_failed {
+  color: var(--error);
+  font-weight: 600;
+}
+
+.next-steps {
+  margin-top: 30px;
+}
+
+.next-steps h3 {
+  color: var(--foreground);
+  font-size: 20px;
+  margin-bottom: 15px;
+}
+
+.next-steps p {
+  margin-bottom: 10px;
+}
+
 /* Error and Success Messages */
 .error-message {
   background-color: rgba(244, 67, 54, 0.1);

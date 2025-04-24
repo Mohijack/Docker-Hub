@@ -8,6 +8,12 @@ function BookingProcess() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [deploymentStatus, setDeploymentStatus] = useState({
+    bookingId: null,
+    serviceName: '',
+    subdomain: '',
+    status: ''
+  });
 
   // Form state
   const [formData, setFormData] = useState({
@@ -44,7 +50,7 @@ function BookingProcess() {
 
   const handleStepClick = (step) => {
     // Only allow going to steps that are accessible
-    if (step === 1 || (user && step <= 3)) {
+    if (step === 1 || (user && step <= 4)) {
       setCurrentStep(step);
       navigate(`/booking?step=${step}`);
     }
@@ -99,6 +105,14 @@ function BookingProcess() {
 
       console.log('Booking successful, ID:', bookingId);
 
+      // Update deployment status with booking information
+      setDeploymentStatus({
+        bookingId: bookingId,
+        serviceName: formData.serviceName,
+        subdomain: formData.subdomain || 'automatisch generiert',
+        status: 'booked'
+      });
+
       // Then, deploy the service
       const deployResponse = await fetch(`/api/bookings/${bookingId}/deploy`, {
         method: 'POST',
@@ -110,23 +124,31 @@ function BookingProcess() {
       const deployData = await deployResponse.json();
 
       if (!deployResponse.ok) {
-        // If deployment fails, we still want to redirect to dashboard
+        // If deployment fails, we still want to proceed to the next step
         // since the service was booked successfully
-        setError(`Deployment konnte nicht gestartet werden: ${deployData.error || 'Unbekannter Fehler'}. Sie werden zum Dashboard weitergeleitet, wo Sie den Deployment-Prozess erneut starten können.`);
+        setError(`Deployment konnte nicht gestartet werden: ${deployData.error || 'Unbekannter Fehler'}. Sie können den Deployment-Prozess später im Dashboard erneut starten.`);
 
-        // Redirect to dashboard after 5 seconds
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 5000);
+        setDeploymentStatus(prev => ({
+          ...prev,
+          status: 'deployment_failed'
+        }));
+
+        // Move to the next step
+        setCurrentStep(4);
+        navigate('/booking?step=4');
         return;
       }
 
-      setSuccess('FE2-Service erfolgreich gebucht und wird bereitgestellt. Sie werden zum Dashboard weitergeleitet...');
+      setSuccess('FE2-Service erfolgreich gebucht und wird bereitgestellt.');
 
-      // Redirect to dashboard after 3 seconds
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 3000);
+      setDeploymentStatus(prev => ({
+        ...prev,
+        status: 'deployed'
+      }));
+
+      // Move to the next step
+      setCurrentStep(4);
+      navigate('/booking?step=4');
 
     } catch (error) {
       console.error('Error in deployment process:', error);
@@ -264,6 +286,49 @@ function BookingProcess() {
             </div>
           </div>
         );
+      case 4:
+        return (
+          <div className="step-content">
+            <h2>Schritt 4: Bereitstellung abgeschlossen</h2>
+            {error && <div className="error-message">{error}</div>}
+            {success && <div className="success-message">{success}</div>}
+
+            <div className="deployment-summary">
+              <h3>Zusammenfassung Ihres FE2-Services</h3>
+              <div className="summary-item">
+                <span className="summary-label">Service-Name:</span>
+                <span className="summary-value">{deploymentStatus.serviceName}</span>
+              </div>
+              <div className="summary-item">
+                <span className="summary-label">Subdomain:</span>
+                <span className="summary-value">{deploymentStatus.subdomain}</span>
+              </div>
+              <div className="summary-item">
+                <span className="summary-label">Status:</span>
+                <span className={`summary-value status-${deploymentStatus.status}`}>
+                  {deploymentStatus.status === 'deployed' ? 'Erfolgreich bereitgestellt' :
+                   deploymentStatus.status === 'deployment_failed' ? 'Bereitstellung fehlgeschlagen' :
+                   'In Bearbeitung'}
+                </span>
+              </div>
+            </div>
+
+            <div className="next-steps">
+              <h3>Nächste Schritte</h3>
+              <p>Ihr FE2-Service wurde erfolgreich gebucht und wird nun bereitgestellt. Dies kann einige Minuten dauern.</p>
+              <p>Sie können den Status Ihres Services im Dashboard überprüfen und verwalten.</p>
+            </div>
+
+            <div className="step-actions">
+              <button
+                className="btn-primary"
+                onClick={() => navigate('/dashboard')}
+              >
+                Zum Dashboard
+              </button>
+            </div>
+          </div>
+        );
       default:
         return null;
     }
@@ -294,6 +359,14 @@ function BookingProcess() {
         >
           <div className="step-number">3</div>
           <div className="step-label">Bereitstellen</div>
+        </div>
+        <div className="step-connector"></div>
+        <div
+          className={`step ${currentStep >= 4 ? 'active' : ''} ${currentStep > 4 ? 'completed' : ''}`}
+          onClick={() => currentStep >= 4 && handleStepClick(4)}
+        >
+          <div className="step-number">4</div>
+          <div className="step-label">Abgeschlossen</div>
         </div>
       </div>
 
