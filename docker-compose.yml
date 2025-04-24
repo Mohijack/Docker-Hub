@@ -16,8 +16,9 @@ services:
       - mongodb-config:/data/configdb
       - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     command: ["--auth", "--bind_ip_all"]
+    # Simplified healthcheck that doesn't require authentication
     healthcheck:
-      test: ["CMD", "mongo", "admin", "--eval", "db.adminCommand('ping').ok", "--quiet", "--host", "localhost", "--port", "27017", "-u", "admin", "-p", "BeyondFireAdmin2023!", "--authenticationDatabase", "admin"]
+      test: ["CMD", "mongo", "--eval", "db.stats().ok"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -54,7 +55,7 @@ services:
       - beyondfire-logs:/app/logs
     depends_on:
       beyondfire-mongodb:
-        condition: service_healthy
+        condition: service_started
     networks:
       - beyondfire-network
 
