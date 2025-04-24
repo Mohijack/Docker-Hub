@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './LogViewer.css';
-import ServiceLogs from './ServiceLogs';
+// Lazy load ServiceLogs component to reduce initial bundle size
+const ServiceLogs = React.lazy(() => import('./ServiceLogs'));
 
 function LogViewer() {
   const [logType, setLogType] = useState('frontend');
@@ -29,6 +30,7 @@ function LogViewer() {
         clearInterval(refreshInterval);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [logType, selectedService]);
 
   useEffect(() => {
@@ -40,6 +42,7 @@ function LogViewer() {
       clearInterval(refreshInterval);
       setRefreshInterval(null);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoRefresh, logType, selectedService]);
 
   useEffect(() => {
@@ -511,11 +514,13 @@ function LogViewer() {
 
     {/* Service Logs Modal */}
     {showServiceLogs && selectedService && (
-      <ServiceLogs
-        serviceId={selectedService}
-        serviceName={selectedServiceName}
-        onClose={closeServiceLogs}
-      />
+      <React.Suspense fallback={<div className="loading">Loading service logs...</div>}>
+        <ServiceLogs
+          serviceId={selectedService}
+          serviceName={selectedServiceName}
+          onClose={closeServiceLogs}
+        />
+      </React.Suspense>
     )}
   );
 }

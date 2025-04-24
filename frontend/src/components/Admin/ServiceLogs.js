@@ -22,7 +22,7 @@ function ServiceLogs({ serviceId, serviceName, onClose }) {
         clearInterval(refreshInterval);
       }
     };
-  }, [serviceId]);
+  }, [serviceId, refreshInterval]);
 
   useEffect(() => {
     if (autoRefresh) {
@@ -33,6 +33,7 @@ function ServiceLogs({ serviceId, serviceName, onClose }) {
       clearInterval(refreshInterval);
       setRefreshInterval(null);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoRefresh, serviceId]);
 
   useEffect(() => {
@@ -190,8 +191,12 @@ function ServiceLogs({ serviceId, serviceName, onClose }) {
         allLogs = [...allLogs, ...systemLogs];
       }
 
-      // Add log level based on content
+      // Add log level based on content (simplified version)
       const logsWithLevel = allLogs.map(log => {
+        if (!log || !log.message) {
+          return { ...log, level: 'INFO', source: '' };
+        }
+
         const content = log.message.toLowerCase();
         let level = 'INFO';
         let source = '';
@@ -205,19 +210,13 @@ function ServiceLogs({ serviceId, serviceName, onClose }) {
           source = 'docker-compose';
         }
 
-        // Determine log level
-        if (content.includes('error') || content.includes('exception') || content.includes('fail') || content.includes('failed')) {
+        // Determine log level (simplified)
+        if (content.includes('error') || content.includes('exception') || content.includes('fail')) {
           level = 'ERROR';
-        } else if (content.includes('warn') || content.includes('warning')) {
+        } else if (content.includes('warn')) {
           level = 'WARNING';
         } else if (content.includes('debug')) {
           level = 'DEBUG';
-        } else if (content.includes('starting') || content.includes('creating') || content.includes('pulling')) {
-          // System actions in progress
-          level = 'INFO';
-        } else if (content.includes('successfully') || content.includes('completed')) {
-          // Successful system actions
-          level = 'INFO';
         }
 
         return { ...log, level, source };
