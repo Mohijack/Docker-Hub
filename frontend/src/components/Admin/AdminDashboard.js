@@ -286,7 +286,6 @@ function AdminDashboard() {
                   <th>Domain</th>
                   <th>Status</th>
                   <th>Erstellt am</th>
-                  <th>Logs</th>
                   <th>Aktionen</th>
                 </tr>
               </thead>
@@ -317,18 +316,6 @@ function AdminDashboard() {
                       </span>
                     </td>
                     <td>{new Date(service.createdAt).toLocaleDateString()}</td>
-                    <td>
-                      <button
-                        className="action-button logs-button"
-                        onClick={() => {
-                          setSelectedService(service);
-                          setShowLogs(true);
-                        }}
-                        title="Service-Logs anzeigen"
-                      >
-                        Logs
-                      </button>
-                    </td>
                     <td>
                       <div className="action-buttons">
                         <button

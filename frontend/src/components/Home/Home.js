@@ -86,27 +86,36 @@ function Home() {
           <div className="steps">
             <div className="step">
               <div className="step-number">1</div>
+              <div className="step-icon">👤</div>
               <h3>Konto erstellen</h3>
-              <p>Registrieren Sie sich in wenigen Sekunden bei BeyondFire Cloud.</p>
+              <p>Registrieren Sie sich in wenigen Sekunden bei BeyondFire Cloud und erhalten Sie sofort Zugang.</p>
             </div>
 
             <div className="step">
               <div className="step-number">2</div>
+              <div className="step-icon">⚙️</div>
               <h3>FE2 konfigurieren</h3>
-              <p>Wählen Sie einen Namen und optional eine benutzerdefinierte Subdomain.</p>
+              <p>Wählen Sie einen Namen und optional eine benutzerdefinierte Subdomain für Ihr FE2-System.</p>
             </div>
 
             <div className="step">
               <div className="step-number">3</div>
+              <div className="step-icon">🚀</div>
               <h3>Bereitstellen</h3>
               <p>Klicken Sie auf "Bereitstellen" und Ihr FE2-System ist in wenigen Minuten einsatzbereit.</p>
             </div>
 
             <div className="step">
               <div className="step-number">4</div>
+              <div className="step-icon">🔥</div>
               <h3>Sofort nutzen</h3>
               <p>Greifen Sie über Ihre Subdomain auf Ihr FE2-System zu und beginnen Sie mit der Konfiguration.</p>
             </div>
+          </div>
+
+          <div className="how-it-works-cta">
+            <p>Bereit, Ihr eigenes FE2-System in der Cloud zu starten?</p>
+            <Link to="/register" className="btn-primary">Jetzt kostenlos starten</Link>
           </div>
         </div>
       </section>

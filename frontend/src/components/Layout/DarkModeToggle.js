@@ -9,11 +9,14 @@ const DarkModeToggle = () => {
     if (storedTheme) {
       setIsDarkMode(storedTheme === 'dark');
       document.documentElement.setAttribute('data-theme', storedTheme);
+      document.body.setAttribute('data-theme', storedTheme);
     } else {
       // Check if user prefers dark mode via OS settings
       const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
       setIsDarkMode(prefersDarkMode);
-      document.documentElement.setAttribute('data-theme', prefersDarkMode ? 'dark' : 'light');
+      const theme = prefersDarkMode ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', theme);
+      document.body.setAttribute('data-theme', theme);
     }
   }, []);
 
@@ -21,15 +24,16 @@ const DarkModeToggle = () => {
     const newTheme = isDarkMode ? 'light' : 'dark';
     setIsDarkMode(!isDarkMode);
     document.documentElement.setAttribute('data-theme', newTheme);
+    document.body.setAttribute('data-theme', newTheme);
     localStorage.setItem('theme', newTheme);
   };
 
   return (
     <div className="theme-switch-wrapper">
       <label className="theme-switch" htmlFor="checkbox">
-        <input 
-          type="checkbox" 
-          id="checkbox" 
+        <input
+          type="checkbox"
+          id="checkbox"
           checked={isDarkMode}
           onChange={toggleTheme}
         />
