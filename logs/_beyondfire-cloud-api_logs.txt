@@ -1,0 +1,30 @@
+2025-04-24 15:47:20 info: Starting BeyondFire Cloud API server
+2025-04-24 15:47:20 info: Environment: production
+2025-04-24 15:47:20 error: Failed to connect to MongoDB: logger.error is not a function
+2025-04-24 15:47:21 info: Starting BeyondFire Cloud API server
+2025-04-24 15:47:21 info: Environment: production
+2025-04-24 15:47:21 error: Failed to connect to MongoDB: logger.error is not a function
+2025-04-24 15:47:22 info: Starting BeyondFire Cloud API server
+2025-04-24 15:47:22 info: Environment: production
+2025-04-24 15:47:22 error: Failed to connect to MongoDB: logger.error is not a function
+2025-04-24 15:47:24 info: Starting BeyondFire Cloud API server
+2025-04-24 15:47:24 info: Environment: production
+2025-04-24 15:47:24 error: Failed to connect to MongoDB: logger.error is not a function
+2025-04-24 15:47:25 info: Starting BeyondFire Cloud API server
+2025-04-24 15:47:25 info: Environment: production
+2025-04-24 15:47:25 error: Failed to connect to MongoDB: logger.error is not a function
+2025-04-24 15:47:28 info: Starting BeyondFire Cloud API server
+2025-04-24 15:47:28 info: Environment: production
+2025-04-24 15:47:28 error: Failed to connect to MongoDB: logger.error is not a function
+2025-04-24 15:47:32 info: Starting BeyondFire Cloud API server
+2025-04-24 15:47:32 info: Environment: production
+2025-04-24 15:47:32 error: Failed to connect to MongoDB: logger.error is not a function
+2025-04-24 15:47:39 info: Starting BeyondFire Cloud API server
+2025-04-24 15:47:39 info: Environment: production
+2025-04-24 15:47:39 error: Failed to connect to MongoDB: logger.error is not a function
+2025-04-24 15:47:53 info: Starting BeyondFire Cloud API server
+2025-04-24 15:47:53 info: Environment: production
+2025-04-24 15:47:53 error: Failed to connect to MongoDB: logger.error is not a function
+2025-04-24 15:48:19 info: Starting BeyondFire Cloud API server
+2025-04-24 15:48:19 info: Environment: production
+2025-04-24 15:48:19 error: Failed to connect to MongoDB: logger.error is not a function

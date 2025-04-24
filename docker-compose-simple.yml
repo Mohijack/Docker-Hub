@@ -14,85 +14,12 @@ services:
     volumes:
       - mongodb-data:/data/db
       - mongodb-config:/data/configdb
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     command: ["--auth", "--bind_ip_all"]
     networks:
       - beyondfire-network
 
-  beyondfire-mongodb-init:
-    image: mongo:4.4
-    container_name: beyondfire-mongodb-init
-    restart: "no"
-    depends_on:
-      - beyondfire-mongodb
-    environment:
-      - MONGO_USERNAME=admin
-      - MONGO_PASSWORD=BeyondFireAdmin2023!
-      - MONGO_DATABASE=beyondfire_cloud
-    command: >
-      bash -c "
-      echo 'Waiting for MongoDB to be ready...' &&
-      sleep 30 &&
-      echo 'Initializing MongoDB...' &&
-      mongo --host beyondfire-mongodb:27017 -u admin -p BeyondFireAdmin2023! --authenticationDatabase admin --eval '
-        const dbName = \"beyondfire_cloud\";
-        const db = db.getSiblingDB(dbName);
 
-        // Create collections if they do not exist
-        if (!db.getCollectionNames().includes(\"users\")) {
-          db.createCollection(\"users\");
-          print(\"Created users collection\");
-
-          // Create default admin user
-          db.users.insertOne({
-            email: \"admin@beyondfire.cloud\",
-            name: \"Admin\",
-            password: \"\\$argon2id\\$v=19\\$m=65536,t=3,p=1\\$tnFQzxFRMuYPJUOLlJQMYQ\\$3Gg9PJSGSKGjEmKvx7b0yNGNGFHXpZ4IGIvYZjAOvFo\",
-            role: \"admin\",
-            createdAt: new Date(),
-            updatedAt: new Date()
-          });
-          print(\"Created default admin user\");
-        }
-
-        if (!db.getCollectionNames().includes(\"services\")) {
-          db.createCollection(\"services\");
-          print(\"Created services collection\");
-
-          // Create default FE2 service
-          db.services.insertOne({
-            id: \"fe2-docker\",
-            name: \"FE2 - Feuerwehr Einsatzleitsystem\",
-            description: \"Alamos FE2 - Professionelles Einsatzleitsystem für Feuerwehren\",
-            price: 19.99,
-            image: \"alamosgmbh/fe2:latest\",
-            resources: {
-              cpu: 2,
-              memory: \"2GB\",
-              storage: \"10GB\"
-            },
-            composeTemplate: \"version: \\\\\"3\\\\\"\\\\nservices:\\\\n  fe2_database:\\\\n    image: mongo:4.4.29\\\\n    ports:\\\\n      - 27017\\\\n    volumes:\\\\n      - fe2_db_data:/data/db\\\\n    restart: unless-stopped\\\\n\\\\n  fe2_app:\\\\n    image: alamosgmbh/fe2:2.36.100\\\\n    environment:\\\\n      - FE2_EMAIL={{FE2_EMAIL}}\\\\n      - FE2_PASSWORD={{FE2_PASSWORD}}\\\\n      - FE2_ACTIVATION_NAME=fe2_{{UNIQUE_ID}}\\\\n      - FE2_IP_MONGODB=fe2_database\\\\n      - FE2_PORT_MONGODB=27017\\\\n    ports:\\\\n      - 83\\\\n    volumes:\\\\n      - fe2_logs:/Logs\\\\n      - fe2_config:/Config\\\\n    restart: unless-stopped\\\\n    depends_on:\\\\n      - fe2_database\\\\n\\\\n  fe2_nginx:\\\\n    image: nginx:alpine\\\\n    ports:\\\\n      - \\\\\"{{PORT}}:80\\\\\"\\\\n    environment:\\\\n      - NGINX_HOST=localhost\\\\n    command: sh -c \\\\\"echo \\\\\\\\\\\\\"server { listen 80; location / { proxy_pass http://fe2_app:83; } }\\\\\\\\\\\\\" > /etc/nginx/conf.d/default.conf && nginx -g \\\\\\\\\\\\\"daemon off;\\\\\\\\\\\\\"\\\\\"\\\\n    restart: unless-stopped\\\\n    depends_on:\\\\n      - fe2_app\\\\n\\\\nvolumes:\\\\n  fe2_db_data:\\\\n  fe2_logs:\\\\n  fe2_config:\\\\n\",
-            active: true,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          });
-          print(\"Created default FE2 service\");
-        }
-
-        if (!db.getCollectionNames().includes(\"bookings\")) {
-          db.createCollection(\"bookings\");
-          print(\"Created bookings collection\");
-        }
-
-        if (!db.getCollectionNames().includes(\"logs\")) {
-          db.createCollection(\"logs\");
-          print(\"Created logs collection\");
-        }
-
-        print(\"MongoDB initialization completed successfully\");
-      '
-      "
-    networks:
-      - beyondfire-network
 
   beyondfire-cloud-api:
     build:
