@@ -126,13 +126,10 @@
 
 .service-selector {
   min-width: 200px;
-  display: flex;
-  gap: 10px;
-  align-items: center;
 }
 
 .service-select {
-  flex: 1;
+  width: 100%;
   padding: 8px 12px;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -146,34 +143,6 @@
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 3px var(--primary-glow);
-}
-
-.view-logs-button {
-  padding: 8px 12px;
-  background-color: var(--primary);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.view-logs-button:hover:not(:disabled) {
-  background-color: var(--primary-dark);
-}
-
-.view-logs-button:disabled {
-  background-color: #cccccc;
-  color: #666666;
-  cursor: not-allowed;
-  opacity: 0.7;
-}
-
-[data-theme="dark"] .view-logs-button:disabled {
-  background-color: #444444;
-  color: #888888;
 }
 
 .level-filter {
@@ -246,22 +215,6 @@
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-all;
-  scrollbar-width: thin;
-  scrollbar-color: var(--primary) var(--card-bg);
-}
-
-.logs-output::-webkit-scrollbar {
-  width: 8px;
-}
-
-.logs-output::-webkit-scrollbar-track {
-  background: var(--card-bg);
-}
-
-.logs-output::-webkit-scrollbar-thumb {
-  background-color: var(--primary);
-  border-radius: 4px;
-  border: 2px solid var(--card-bg);
 }
 
 .log-line {

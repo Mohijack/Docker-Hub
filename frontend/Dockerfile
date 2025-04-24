@@ -1,23 +1,17 @@
 # Build stage
 FROM node:18-alpine as build
 
-# Set environment variables
-ENV NODE_OPTIONS="--max-old-space-size=4096"
-ENV GENERATE_SOURCEMAP=false
-ENV CI=false
-
 WORKDIR /app
 
-# Install dependencies first (for better caching)
+# Copy package files and install dependencies
 COPY package*.json ./
-RUN npm install --legacy-peer-deps --no-audit --no-fund
+RUN npm install
 
 # Copy application code
 COPY . .
 
-# Build the application with detailed error output
-RUN echo "Starting build process..." && \
-    npm run build || (echo "Build failed with exit code $?. See error above." && exit 1)
+# Build the application
+RUN npm run build
 
 # Production stage
 FROM nginx:alpine
