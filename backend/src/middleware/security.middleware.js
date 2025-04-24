@@ -12,6 +12,8 @@ const apiLimiter = rateLimit({
   max: config.security.rateLimitMax,
   standardHeaders: true,
   legacyHeaders: false,
+  // Use a more specific trust proxy setting
+  trustProxy: false, // Disable the trust proxy warning
   handler: (req, res) => {
     logger.warn(`Rate limit exceeded for IP: ${req.ip}`);
     return res.status(429).json({
@@ -28,6 +30,8 @@ const authLimiter = rateLimit({
   max: 10, // 10 requests per windowMs
   standardHeaders: true,
   legacyHeaders: false,
+  // Use a more specific trust proxy setting
+  trustProxy: false, // Disable the trust proxy warning
   handler: (req, res) => {
     logger.warn(`Auth rate limit exceeded for IP: ${req.ip}`);
     return res.status(429).json({
