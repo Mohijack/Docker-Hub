@@ -10,6 +10,18 @@ const dbExists = db.getCollectionNames().includes('system.users');
 if (!dbExists) {
   print('Initializing MongoDB...');
 
+  // Create a database user for the application
+  db.createUser({
+    user: 'admin',
+    pwd: 'BeyondFireAdmin2023!',
+    roles: [
+      { role: 'userAdminAnyDatabase', db: 'admin' },
+      { role: 'readWriteAnyDatabase', db: 'admin' },
+      { role: 'dbAdminAnyDatabase', db: 'admin' }
+    ]
+  });
+  print('Created admin user for authentication');
+
   // Create the application database
   const appDb = db.getSiblingDB('beyondfire_cloud');
 
@@ -58,6 +70,17 @@ if (!dbExists) {
   // Create logs collection
   appDb.createCollection('logs');
   print('Created logs collection');
+
+  // Create a specific user for the beyondfire_cloud database
+  db.createUser({
+    user: 'beyondfire',
+    pwd: 'BeyondFireAdmin2023!',
+    roles: [
+      { role: 'readWrite', db: 'beyondfire_cloud' },
+      { role: 'dbAdmin', db: 'beyondfire_cloud' }
+    ]
+  });
+  print('Created beyondfire user for beyondfire_cloud database');
 
   print('MongoDB initialization completed successfully');
 } else {
