@@ -8,18 +8,20 @@ services:
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USERNAME}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
+      - MONGO_INITDB_DATABASE=${MONGO_DATABASE}
     ports:
       - "27017:27017"
     volumes:
       - mongodb-data:/data/db
       - mongodb-config:/data/configdb
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     command: ["--auth", "--bind_ip_all"]
     healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/admin -u ${MONGO_ROOT_USERNAME} -p ${MONGO_ROOT_PASSWORD} --quiet
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping').ok", "--quiet", "--host", "localhost", "--port", "27017", "-u", "${MONGO_ROOT_USERNAME}", "-p", "${MONGO_ROOT_PASSWORD}", "--authenticationDatabase", "admin"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 30s
+      start_period: 60s
     networks:
       - beyondfire-network
 
@@ -42,7 +44,7 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
       - SERVER_IP=${SERVER_IP}
-      - MONGO_URI=mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@beyondfire-mongodb:27017/${MONGO_DATABASE}?authSource=admin
+      - MONGO_URI=mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@beyondfire-mongodb:27017/${MONGO_DATABASE}?authSource=admin
       - MONGO_DATABASE=${MONGO_DATABASE}
       - RATE_LIMIT_WINDOW_MS=15000
       - RATE_LIMIT_MAX=100
