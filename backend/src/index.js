@@ -95,6 +95,22 @@ try {
       });
     });
 
+    // Direct API test endpoint
+    app.get('/api/direct-test', (req, res) => {
+      logger.info('Direct API test route accessed', {
+        originalUrl: req.originalUrl,
+        baseUrl: req.baseUrl,
+        path: req.path,
+        params: req.params
+      });
+      res.json({
+        message: 'Direct API test route is working correctly',
+        originalUrl: req.originalUrl,
+        baseUrl: req.baseUrl,
+        path: req.path
+      });
+    });
+
     // API Routes
     app.use('/api', routes);
 

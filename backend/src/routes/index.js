@@ -36,10 +36,14 @@ router.use('/services', serviceRoutes);
 router.use('/bookings', bookingRoutes);
 router.use('/admin', adminRoutes);
 
-// 404 handler for API routes
-router.use((req, res) => {
-  logger.warn(`API route not found: ${req.method} ${req.originalUrl}`);
-  res.status(404).json({ error: 'API endpoint not found' });
+// Debug middleware for API routes
+router.use((req, res, next) => {
+  logger.debug(`API route processing: ${req.method} ${req.originalUrl}`, {
+    baseUrl: req.baseUrl,
+    path: req.path,
+    params: req.params
+  });
+  next();
 });
 
 module.exports = router;
