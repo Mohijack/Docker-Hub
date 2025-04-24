@@ -18,33 +18,33 @@ const authenticateToken = async (req, res, next) => {
 
     try {
       const decoded = jwt.verify(token, config.jwt.secret);
-      
+
       // Check if token requires 2FA
       if (decoded.require2FA) {
-        return res.status(403).json({ 
+        return res.status(403).json({
           error: 'Two-factor authentication required',
           require2FA: true
         });
       }
-      
+
       // Find user
       const user = await User.findById(decoded.id);
-      
+
       if (!user) {
         return res.status(401).json({ error: 'Invalid token. User not found.' });
       }
-      
+
       // Add user to request
       req.user = user;
       next();
     } catch (error) {
       if (error.name === 'TokenExpiredError') {
-        return res.status(401).json({ 
+        return res.status(401).json({
           error: 'Token expired',
           tokenExpired: true
         });
       }
-      
+
       return res.status(403).json({ error: 'Invalid token' });
     }
   } catch (error) {
@@ -65,27 +65,72 @@ const requireAdmin = (req, res, next) => {
 };
 
 /**
+ * Role middleware
+ * Ensures user has one of the specified roles
+ * @param {Array} roles - Array of allowed roles
+ */
+const requireRole = (roles) => {
+  return (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.status(403).json({
+        error: 'Access denied',
+        message: `This action requires one of the following roles: ${roles.join(', ')}`
+      });
+    }
+    next();
+  };
+};
+
+/**
+ * Permission middleware
+ * Ensures user has the specified permission
+ * @param {string} permission - Required permission
+ */
+const requirePermission = (permission) => {
+  const { roleHasPermission } = require('../utils/permissions');
+
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    // Check if user has the required permission based on their role
+    if (!roleHasPermission(req.user.role, permission)) {
+      // Check if user has the permission explicitly assigned
+      if (!req.user.permissions || !req.user.permissions.includes(permission)) {
+        return res.status(403).json({
+          error: 'Permission denied',
+          message: `This action requires the '${permission}' permission`
+        });
+      }
+    }
+
+    next();
+  };
+};
+
+/**
  * Refresh token middleware
  * Validates refresh token
  */
 const validateRefreshToken = async (req, res, next) => {
   try {
     const { refreshToken } = req.body;
-    
+
     if (!refreshToken) {
       return res.status(400).json({ error: 'Refresh token is required' });
     }
-    
+
     // Find user with this refresh token
     const user = await User.findOne({
       'refreshTokens.token': refreshToken,
       'refreshTokens.expires': { $gt: new Date() }
     });
-    
+
     if (!user) {
       return res.status(401).json({ error: 'Invalid refresh token' });
     }
-    
+
     // Add user and refresh token to request
     req.user = user;
     req.refreshToken = refreshToken;
@@ -99,5 +144,7 @@ const validateRefreshToken = async (req, res, next) => {
 module.exports = {
   authenticateToken,
   requireAdmin,
+  requireRole,
+  requirePermission,
   validateRefreshToken
 };

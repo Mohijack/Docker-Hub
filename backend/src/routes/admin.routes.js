@@ -1,18 +1,37 @@
 const express = require('express');
 const router = express.Router();
 const { User, Booking, Service } = require('../models/mongoose');
-const { authenticateToken, requireAdmin } = require('../middleware/auth.middleware');
+const {
+  authenticateToken,
+  requireAdmin,
+  requirePermission
+} = require('../middleware/auth.middleware');
 const deploymentService = require('../services/deployment');
 const { logger } = require('../utils/logger');
+const {
+  ADMIN_ACCESS,
+  ADMIN_LOGS,
+  ADMIN_SETTINGS,
+  USER_READ,
+  USER_UPDATE,
+  USER_DELETE,
+  SERVICE_READ,
+  SERVICE_CREATE,
+  SERVICE_UPDATE,
+  SERVICE_DELETE,
+  BOOKING_READ,
+  BOOKING_UPDATE,
+  BOOKING_DELETE
+} = require('../utils/permissions');
 
 /**
  * @route   GET /api/admin/users
  * @desc    Get all users
- * @access  Admin
+ * @access  Admin (requires admin:access and user:read permissions)
  */
-router.get('/users', authenticateToken, requireAdmin, async (req, res) => {
+router.get('/users', authenticateToken, requirePermission(ADMIN_ACCESS), requirePermission(USER_READ), async (req, res) => {
   try {
-    const users = await User.find().select('-refreshTokens');
+    const users = await User.find().select('-refreshTokens -password -twoFactorAuth -passwordReset');
     res.json(users);
   } catch (error) {
     logger.error('Admin get users error:', error);
@@ -28,11 +47,11 @@ router.get('/users', authenticateToken, requireAdmin, async (req, res) => {
 router.get('/users/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select('-refreshTokens');
-    
+
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    
+
     res.json(user);
   } catch (error) {
     logger.error('Admin get user error:', error);
@@ -48,20 +67,20 @@ router.get('/users/:id', authenticateToken, requireAdmin, async (req, res) => {
 router.put('/users/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { name, company, role } = req.body;
-    
+
     const user = await User.findById(req.params.id);
-    
+
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    
+
     // Update fields
     if (name) user.name = name;
     if (company !== undefined) user.company = company;
     if (role && ['user', 'admin'].includes(role)) user.role = role;
-    
+
     await user.save();
-    
+
     res.json({
       message: 'User updated successfully',
       user
@@ -80,22 +99,22 @@ router.put('/users/:id', authenticateToken, requireAdmin, async (req, res) => {
 router.post('/users/:id/reset-password', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
-    
+
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    
+
     // Generate a random password
     const newPassword = Math.random().toString(36).substring(2, 10) + 'A1!';
-    
+
     // Update password
     user.password = newPassword;
-    
+
     // Invalidate all refresh tokens
     user.refreshTokens = [];
-    
+
     await user.save();
-    
+
     res.json({
       message: 'Password reset successfully',
       newPassword
@@ -129,11 +148,11 @@ router.get('/bookings', authenticateToken, requireAdmin, async (req, res) => {
 router.get('/bookings/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id).populate('userId', 'name email');
-    
+
     if (!booking) {
       return res.status(404).json({ error: 'Booking not found' });
     }
-    
+
     res.json(booking);
   } catch (error) {
     logger.error('Admin get booking error:', error);
@@ -149,22 +168,22 @@ router.get('/bookings/:id', authenticateToken, requireAdmin, async (req, res) =>
 router.put('/bookings/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { customName, status } = req.body;
-    
+
     const booking = await Booking.findById(req.params.id);
-    
+
     if (!booking) {
       return res.status(404).json({ error: 'Booking not found' });
     }
-    
+
     // Update fields
     if (customName) booking.customName = customName;
     if (status && ['pending', 'deploying', 'active', 'suspended', 'failed', 'deleted'].includes(status)) {
       booking.status = status;
       booking.addDeploymentLog(`Status updated to ${status} by admin`, 'info');
     }
-    
+
     await booking.save();
-    
+
     res.json({
       message: 'Booking updated successfully',
       booking
@@ -183,16 +202,16 @@ router.put('/bookings/:id', authenticateToken, requireAdmin, async (req, res) =>
 router.post('/bookings/:id/deploy', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id);
-    
+
     if (!booking) {
       return res.status(404).json({ error: 'Booking not found' });
     }
-    
+
     // Update booking status
     booking.status = 'deploying';
     booking.addDeploymentLog('Deployment started by admin', 'info');
     await booking.save();
-    
+
     // Deploy service (this will be handled asynchronously)
     deploymentService.deployService(booking._id)
       .then(result => {
@@ -201,7 +220,7 @@ router.post('/bookings/:id/deploy', authenticateToken, requireAdmin, async (req,
       .catch(error => {
         logger.error(`Deployment error for booking ${booking._id}:`, error);
       });
-    
+
     res.json({
       message: 'Deployment started',
       booking
@@ -220,23 +239,23 @@ router.post('/bookings/:id/deploy', authenticateToken, requireAdmin, async (req,
 router.post('/bookings/:id/stop', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id);
-    
+
     if (!booking) {
       return res.status(404).json({ error: 'Booking not found' });
     }
-    
+
     // Stop service
     const result = await deploymentService.stopService(booking._id);
-    
+
     if (!result.success) {
       return res.status(400).json({ error: 'Failed to stop service' });
     }
-    
+
     // Update booking status
     booking.status = 'suspended';
     booking.addDeploymentLog('Service stopped by admin', 'info');
     await booking.save();
-    
+
     res.json({
       message: 'Service stopped successfully',
       booking
@@ -255,33 +274,33 @@ router.post('/bookings/:id/stop', authenticateToken, requireAdmin, async (req, r
 router.delete('/bookings/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id);
-    
+
     if (!booking) {
       return res.status(404).json({ error: 'Booking not found' });
     }
-    
+
     // Check if booking is active
     if (booking.status === 'active') {
       // Stop the service first
       const result = await deploymentService.stopService(booking._id);
-      
+
       if (!result.success) {
         return res.status(400).json({ error: 'Failed to stop service' });
       }
     }
-    
+
     // Update booking status
     booking.status = 'deleted';
     booking.addDeploymentLog('Booking deleted by admin', 'info');
     await booking.save();
-    
+
     // Remove service from user
     const user = await User.findById(booking.userId);
     if (user) {
       user.services = user.services.filter(service => service.id.toString() !== booking._id.toString());
       await user.save();
     }
-    
+
     res.json({
       message: 'Booking deleted successfully'
     });
@@ -314,19 +333,19 @@ router.get('/services', authenticateToken, requireAdmin, async (req, res) => {
 router.post('/services', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { id, name, description, price, image, resources, composeTemplate } = req.body;
-    
+
     // Validate input
     if (!id || !name || !description || !price || !image || !resources || !composeTemplate) {
       return res.status(400).json({ error: 'All fields are required' });
     }
-    
+
     // Check if service already exists
     const existingService = await Service.findOne({ id });
-    
+
     if (existingService) {
       return res.status(400).json({ error: 'Service with this ID already exists' });
     }
-    
+
     // Create service
     const service = new Service({
       id,
@@ -338,9 +357,9 @@ router.post('/services', authenticateToken, requireAdmin, async (req, res) => {
       composeTemplate,
       active: true
     });
-    
+
     await service.save();
-    
+
     res.status(201).json({
       message: 'Service created successfully',
       service
@@ -359,13 +378,13 @@ router.post('/services', authenticateToken, requireAdmin, async (req, res) => {
 router.put('/services/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { name, description, price, image, resources, composeTemplate, active } = req.body;
-    
+
     const service = await Service.findOne({ id: req.params.id });
-    
+
     if (!service) {
       return res.status(404).json({ error: 'Service not found' });
     }
-    
+
     // Update fields
     if (name) service.name = name;
     if (description) service.description = description;
@@ -374,9 +393,9 @@ router.put('/services/:id', authenticateToken, requireAdmin, async (req, res) =>
     if (resources) service.resources = resources;
     if (composeTemplate) service.composeTemplate = composeTemplate;
     if (active !== undefined) service.active = active;
-    
+
     await service.save();
-    
+
     res.json({
       message: 'Service updated successfully',
       service
@@ -395,17 +414,17 @@ router.put('/services/:id', authenticateToken, requireAdmin, async (req, res) =>
 router.get('/logs', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { level, limit = 100, skip = 0 } = req.query;
-    
+
     // Query MongoDB logs collection
     const db = mongoose.connection.db;
     const logsCollection = db.collection('logs');
-    
+
     // Build query
     const query = {};
     if (level) {
       query.level = level;
     }
-    
+
     // Get logs
     const logs = await logsCollection
       .find(query)
@@ -413,7 +432,7 @@ router.get('/logs', authenticateToken, requireAdmin, async (req, res) => {
       .skip(parseInt(skip))
       .limit(parseInt(limit))
       .toArray();
-    
+
     res.json(logs);
   } catch (error) {
     logger.error('Admin get logs error:', error);

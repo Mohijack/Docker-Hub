@@ -36,8 +36,12 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['user', 'admin'],
+    enum: ['user', 'admin', 'support', 'manager'],
     default: 'user'
+  },
+  permissions: {
+    type: [String],
+    default: []
   },
   services: [{
     id: String,
@@ -126,27 +130,27 @@ userSchema.statics.validatePassword = function(password) {
   if (password.length < 8) {
     return { valid: false, message: 'Password must be at least 8 characters long' };
   }
-  
+
   // At least one uppercase letter
   if (!/[A-Z]/.test(password)) {
     return { valid: false, message: 'Password must contain at least one uppercase letter' };
   }
-  
+
   // At least one lowercase letter
   if (!/[a-z]/.test(password)) {
     return { valid: false, message: 'Password must contain at least one lowercase letter' };
   }
-  
+
   // At least one number
   if (!/[0-9]/.test(password)) {
     return { valid: false, message: 'Password must contain at least one number' };
   }
-  
+
   // At least one special character
   if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
     return { valid: false, message: 'Password must contain at least one special character' };
   }
-  
+
   return { valid: true };
 };
 
@@ -169,7 +173,7 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
 userSchema.pre('save', async function(next) {
   // Only hash the password if it has been modified (or is new)
   if (!this.isModified('password')) return next();
-  
+
   try {
     // Generate a hash using argon2id (balanced between argon2i and argon2d)
     this.password = await argon2.hash(this.password, {
@@ -190,16 +194,16 @@ userSchema.pre('save', async function(next) {
 userSchema.methods.generatePasswordResetToken = function() {
   // Generate a random token
   const resetToken = crypto.randomBytes(32).toString('hex');
-  
+
   // Hash the token and store it in the database
   this.passwordReset.token = crypto
     .createHash('sha256')
     .update(resetToken)
     .digest('hex');
-    
+
   // Set expiration to 1 hour from now
   this.passwordReset.expires = Date.now() + 3600000; // 1 hour
-  
+
   return resetToken;
 };
 
@@ -217,19 +221,19 @@ userSchema.methods.generateTwoFactorSecret = function() {
  */
 userSchema.methods.generateBackupCodes = function() {
   const backupCodes = [];
-  
+
   // Generate 10 backup codes
   for (let i = 0; i < 10; i++) {
     // Generate a random 8-character code
     const code = crypto.randomBytes(4).toString('hex');
     backupCodes.push(code);
   }
-  
+
   // Store hashed versions of the backup codes
-  this.twoFactorAuth.backupCodes = backupCodes.map(code => 
+  this.twoFactorAuth.backupCodes = backupCodes.map(code =>
     crypto.createHash('sha256').update(code).digest('hex')
   );
-  
+
   return backupCodes;
 };
 
@@ -239,7 +243,7 @@ userSchema.methods.generateBackupCodes = function() {
 userSchema.methods.addRefreshToken = function(token, expires, userAgent, ipAddress) {
   // Remove expired tokens first
   this.refreshTokens = this.refreshTokens.filter(t => t.expires > Date.now());
-  
+
   // Add the new token
   this.refreshTokens.push({
     token,
@@ -248,7 +252,7 @@ userSchema.methods.addRefreshToken = function(token, expires, userAgent, ipAddre
     ipAddress,
     createdAt: Date.now()
   });
-  
+
   // Limit to 5 tokens per user (oldest will be removed)
   if (this.refreshTokens.length > 5) {
     this.refreshTokens.sort((a, b) => a.createdAt - b.createdAt);
@@ -272,7 +276,7 @@ userSchema.methods.recordLoginAttempt = function(success, ipAddress, userAgent) 
     this.failedLoginAttempts = 0;
     this.accountLocked = false;
     this.accountLockedUntil = null;
-    
+
     // Record successful login
     this.lastLogin = {
       date: new Date(),
@@ -282,7 +286,7 @@ userSchema.methods.recordLoginAttempt = function(success, ipAddress, userAgent) 
   } else {
     // Increment failed login attempts
     this.failedLoginAttempts += 1;
-    
+
     // Lock account after 5 failed attempts
     if (this.failedLoginAttempts >= 5) {
       this.accountLocked = true;

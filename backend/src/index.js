@@ -250,93 +250,14 @@ try {
       }
     });
 
-    // Direct user profile route
-    app.get('/api/users/profile', async (req, res) => {
-      try {
-        // Get the authorization header
-        const authHeader = req.headers['authorization'];
-        const token = authHeader && authHeader.split(' ')[1];
-
-        if (!token) {
-          return res.status(401).json({ error: 'Access denied. No token provided.' });
-        }
-
-        try {
-          // Verify the token
-          const jwt = require('jsonwebtoken');
-          const config = require('./utils/config');
-          const decoded = jwt.verify(token, config.jwt.secret);
-
-          // Get the user from the database
-          const User = mongoose.model('User');
-          const user = await User.findById(decoded.id);
-
-          if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-          }
-
-          // Return the user profile
-          res.json({
-            user: {
-              id: user._id,
-              email: user.email,
-              name: user.name,
-              role: user.role,
-              company: user.company
-            }
-          });
-        } catch (error) {
-          if (error.name === 'TokenExpiredError') {
-            return res.status(401).json({
-              error: 'Token expired',
-              tokenExpired: true
-            });
-          }
-
-          return res.status(403).json({ error: 'Invalid token' });
-        }
-      } catch (error) {
-        logger.error('Profile error:', error);
-        res.status(500).json({ error: 'Failed to get profile' });
-      }
+    // Redirect profile requests to user routes
+    app.get('/api/users/profile', (req, res) => {
+      res.redirect(307, '/api/users/me');
     });
 
-    // Direct services route
-    app.get('/api/services', async (req, res) => {
-      try {
-        // Get services from database
-        // Use the Service model from the mongoose models
-        const { Service } = require('./models/mongoose');
-
-        // Return a hardcoded service for now if there's an error
-        try {
-          const services = await Service.find({ active: true });
-          res.json({ services });
-        } catch (modelError) {
-          logger.error('Service model error:', modelError);
-
-          // Return a hardcoded FE2 service
-          const hardcodedService = {
-            id: 'fe2-docker',
-            name: 'FE2 - Feuerwehr Einsatzleitsystem',
-            description: 'Alamos FE2 - Professionelles Einsatzleitsystem für Feuerwehren',
-            price: 19.99,
-            image: 'alamosgmbh/fe2:latest',
-            resources: {
-              cpu: 2,
-              memory: '2GB',
-              storage: '10GB'
-            },
-            active: true
-          };
-
-          res.json({ services: [hardcodedService] });
-        }
-      } catch (error) {
-        logger.error('Services error:', error);
-        res.status(500).json({ error: 'Failed to get services' });
-      }
-    });
+    // Services routes
+    const serviceRoutes = require('./routes/service.routes');
+    app.use('/api/services', serviceRoutes);
 
     // Token refresh route
     app.post('/api/auth/refresh-token', async (req, res) => {
@@ -415,6 +336,14 @@ try {
       });
       next();
     });
+
+    // User routes
+    const userRoutes = require('./routes/user.routes');
+    app.use('/api/users', userRoutes);
+
+    // Admin routes
+    const adminRoutes = require('./routes/admin.routes');
+    app.use('/api/admin', adminRoutes);
 
     // Direct login test route
     const loginTestRoutes = require('./routes/login-test');
