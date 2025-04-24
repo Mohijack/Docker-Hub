@@ -301,6 +301,8 @@ function ServiceLogs({ serviceId, serviceName, onClose }) {
   };
 
   const getLogLevelClass = (level) => {
+    if (!level) return '';
+
     switch (level) {
       case 'ERROR': return 'log-error';
       case 'WARNING': return 'log-warning';

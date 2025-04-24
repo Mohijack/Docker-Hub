@@ -1,17 +1,20 @@
 # Build stage
 FROM node:18-alpine as build
 
+# Increase Node memory limit
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+
 WORKDIR /app
 
 # Copy package files and install dependencies
 COPY package*.json ./
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 # Copy application code
 COPY . .
 
-# Build the application
-RUN npm run build
+# Build the application with detailed error output
+RUN npm run build || (echo "Build failed. See error above." && exit 1)
 
 # Production stage
 FROM nginx:alpine

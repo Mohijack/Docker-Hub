@@ -290,6 +290,8 @@ function LogViewer() {
   };
 
   const getLogLevelClass = (log) => {
+    if (!log || !log.message) return '';
+
     const content = log.message.toLowerCase();
     if (content.includes('error') || content.includes('exception') || content.includes('fail')) {
       return 'log-error';
@@ -305,6 +307,8 @@ function LogViewer() {
   };
 
   const getLogLevel = (log) => {
+    if (!log || !log.message) return 'INFO';
+
     const content = log.message.toLowerCase();
     if (content.includes('error') || content.includes('exception') || content.includes('fail')) {
       return 'ERROR';
