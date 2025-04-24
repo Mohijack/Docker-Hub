@@ -349,6 +349,95 @@ try {
     const loginTestRoutes = require('./routes/login-test');
     app.use('/login-test', loginTestRoutes);
 
+    // Temporary route to make a user admin
+    app.post('/api/make-admin', async (req, res) => {
+      try {
+        const { email } = req.body;
+
+        if (!email) {
+          return res.status(400).json({ error: 'Email is required' });
+        }
+
+        // Find user by email
+        const User = mongoose.model('User');
+        const user = await User.findOne({ email });
+
+        if (!user) {
+          return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Update user role to admin
+        user.role = 'admin';
+
+        // Add all permissions
+        const { ROLE_PERMISSIONS } = require('./utils/permissions');
+        user.permissions = ROLE_PERMISSIONS.admin;
+
+        await user.save();
+
+        logger.info(`User ${email} updated to admin role`);
+
+        res.json({
+          message: 'User updated to admin role successfully',
+          user: {
+            id: user._id,
+            email: user.email,
+            name: user.name,
+            role: user.role
+          }
+        });
+      } catch (error) {
+        logger.error('Make admin error:', error);
+        res.status(500).json({ error: 'Failed to make user admin' });
+      }
+    });
+
+    // Temporary route to create an admin user
+    app.post('/api/create-admin', async (req, res) => {
+      try {
+        const { email, password, name } = req.body;
+
+        // Simple validation
+        if (!email || !password || !name) {
+          return res.status(400).json({ error: 'Email, password, and name are required' });
+        }
+
+        // Check if user already exists
+        const User = mongoose.model('User');
+        const existingUser = await User.findOne({ email });
+
+        if (existingUser) {
+          return res.status(400).json({ error: 'User already exists' });
+        }
+
+        // Create new user
+        const newUser = new User({
+          email,
+          password,
+          name,
+          role: 'admin',
+          permissions: require('./utils/permissions').ROLE_PERMISSIONS.admin
+        });
+
+        await newUser.save();
+
+        logger.info('Admin user created successfully', { email });
+
+        res.status(201).json({
+          message: 'Admin user created successfully',
+          user: {
+            id: newUser._id,
+            email: newUser.email,
+            name: newUser.name,
+            role: newUser.role
+          }
+        });
+      } catch (error) {
+        logger.error('Create admin error:', error);
+        res.status(500).json({ error: 'Failed to create admin user' });
+      }
+    });
+
     // API 404 handler - MUST be defined AFTER routes
     app.use('/api/*', (req, res) => {
       logger.warn(`API route not found: ${req.method} ${req.originalUrl}`, {
