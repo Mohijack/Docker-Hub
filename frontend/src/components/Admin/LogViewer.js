@@ -109,21 +109,10 @@ function LogViewer() {
     logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const copyToClipboard = (level) => {
+  const copyToClipboard = () => {
     try {
-      // Filter logs by level if specified
-      const logsToCopy = level === 'all'
-        ? filteredLogs
-        : filteredLogs.filter(log => {
-            const logLevel = getLogLevel(log);
-            return level === 'error' && logLevel === 'ERROR' ||
-                   level === 'warning' && logLevel === 'WARNING' ||
-                   level === 'info' && logLevel === 'INFO' ||
-                   level === 'debug' && logLevel === 'DEBUG';
-          });
-
-      // Format logs for clipboard
-      const formattedLogs = logsToCopy.map(log =>
+      // Format logs for clipboard - using already filtered logs
+      const formattedLogs = filteredLogs.map(log =>
         `${log.timestamp} [${getLogLevel(log)}] ${log.message}`
       ).join('\n');
 
@@ -301,60 +290,34 @@ function LogViewer() {
           {copySuccess && <span className="copy-success">{copySuccess}</span>}
         </div>
         <div className="log-actions-container">
-          <div className="copy-buttons">
-            <button
-              className="copy-button all-button"
-              onClick={() => copyToClipboard('all')}
-              title="Alle angezeigten Logs kopieren"
-            >
-              <span className="copy-icon">📋</span> Alle kopieren
-            </button>
-            <button
-              className="copy-button error-button"
-              onClick={() => copyToClipboard('error')}
-              title="Nur Error-Logs kopieren"
-            >
-              <span className="copy-icon">📋</span> Errors
-            </button>
-            <button
-              className="copy-button warning-button"
-              onClick={() => copyToClipboard('warning')}
-              title="Nur Warning-Logs kopieren"
-            >
-              <span className="copy-icon">📋</span> Warnings
-            </button>
-            <button
-              className="copy-button info-button"
-              onClick={() => copyToClipboard('info')}
-              title="Nur Info-Logs kopieren"
-            >
-              <span className="copy-icon">📋</span> Infos
-            </button>
-            <button
-              className="copy-button debug-button"
-              onClick={() => copyToClipboard('debug')}
-              title="Nur Debug-Logs kopieren"
-            >
-              <span className="copy-icon">📋</span> Debug
-            </button>
-          </div>
-          <div className="log-legend">
-            <div className="legend-item">
-              <span className="legend-color error-color"></span>
-              <span>Error</span>
+          <div className="log-bottom-row">
+            <div className="log-legend">
+              <div className="legend-item">
+                <span className="legend-color error-color"></span>
+                <span>Error</span>
+              </div>
+              <div className="legend-item">
+                <span className="legend-color warning-color"></span>
+                <span>Warning</span>
+              </div>
+              <div className="legend-item">
+                <span className="legend-color info-color"></span>
+                <span>Info</span>
+              </div>
+              <div className="legend-item">
+                <span className="legend-color debug-color"></span>
+                <span>Debug</span>
+              </div>
             </div>
-            <div className="legend-item">
-              <span className="legend-color warning-color"></span>
-              <span>Warning</span>
-            </div>
-            <div className="legend-item">
-              <span className="legend-color info-color"></span>
-              <span>Info</span>
-            </div>
-            <div className="legend-item">
-              <span className="legend-color debug-color"></span>
-              <span>Debug</span>
-            </div>
+
+            <button
+              className="copy-button"
+              onClick={copyToClipboard}
+              title="Gefilterte Logs kopieren"
+              disabled={filteredLogs.length === 0}
+            >
+              <span className="copy-icon">📋</span> Logs kopieren
+            </button>
           </div>
         </div>
       </div>
