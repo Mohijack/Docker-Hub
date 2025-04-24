@@ -240,7 +240,8 @@ function LogViewer() {
     } else if (content.includes('info')) {
       return 'log-info';
     } else {
-      return '';
+      // Default to info for unrecognized log levels
+      return 'log-info';
     }
   };
 
@@ -255,6 +256,7 @@ function LogViewer() {
     } else if (content.includes('debug')) {
       return 'DEBUG';
     } else {
+      // Default to INFO for unrecognized log levels or if message contains 'info'
       return 'INFO';
     }
   };

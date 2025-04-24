@@ -304,7 +304,7 @@
 }
 
 [data-theme="dark"] .log-message {
-  color: var(--text);
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .log-error {
@@ -352,6 +352,10 @@
   color: #ff5252;
 }
 
+[data-theme="dark"] .log-error .log-message {
+  color: rgba(255, 255, 255, 0.9);
+}
+
 [data-theme="dark"] .log-warning {
   background-color: rgba(255, 193, 7, 0.2);
   border-left: 3px solid rgba(255, 193, 7, 0.8);
@@ -359,6 +363,10 @@
 
 [data-theme="dark"] .log-warning .log-level {
   color: #ffeb3b;
+}
+
+[data-theme="dark"] .log-warning .log-message {
+  color: rgba(255, 255, 255, 0.9);
 }
 
 [data-theme="dark"] .log-info {
@@ -370,6 +378,10 @@
   color: #42a5f5;
 }
 
+[data-theme="dark"] .log-info .log-message {
+  color: rgba(255, 255, 255, 0.9);
+}
+
 [data-theme="dark"] .log-debug {
   background-color: rgba(158, 158, 158, 0.2);
   border-left: 3px solid rgba(158, 158, 158, 0.8);
@@ -377,6 +389,10 @@
 
 [data-theme="dark"] .log-debug .log-level {
   color: #bdbdbd;
+}
+
+[data-theme="dark"] .log-debug .log-message {
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .loading, .empty-logs {
@@ -388,12 +404,21 @@
   font-style: italic;
 }
 
+[data-theme="dark"] .loading,
+[data-theme="dark"] .empty-logs {
+  color: rgba(255, 255, 255, 0.6);
+}
+
 .log-stats {
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-size: 13px;
   color: var(--text-light);
+}
+
+[data-theme="dark"] .log-stats {
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .log-actions-container {
@@ -484,6 +509,10 @@
   gap: 6px;
   color: var(--text-light);
   font-size: 12px;
+}
+
+[data-theme="dark"] .legend-item {
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .legend-color {
