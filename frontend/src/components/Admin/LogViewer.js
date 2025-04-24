@@ -12,6 +12,7 @@ function LogViewer() {
   const [selectedService, setSelectedService] = useState('');
   const [filterText, setFilterText] = useState('');
   const [filterLevel, setFilterLevel] = useState('all');
+  const [copySuccess, setCopySuccess] = useState('');
   const logsEndRef = useRef(null);
 
   useEffect(() => {
@@ -108,6 +109,37 @@ function LogViewer() {
     logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const copyToClipboard = (level) => {
+    try {
+      // Filter logs by level if specified
+      const logsToCopy = level === 'all'
+        ? filteredLogs
+        : filteredLogs.filter(log => {
+            const logLevel = getLogLevel(log);
+            return level === 'error' && logLevel === 'ERROR' ||
+                   level === 'warning' && logLevel === 'WARNING' ||
+                   level === 'info' && logLevel === 'INFO' ||
+                   level === 'debug' && logLevel === 'DEBUG';
+          });
+
+      // Format logs for clipboard
+      const formattedLogs = logsToCopy.map(log =>
+        `${log.timestamp} [${getLogLevel(log)}] ${log.message}`
+      ).join('\n');
+
+      navigator.clipboard.writeText(formattedLogs);
+      setCopySuccess('Logs kopiert!');
+
+      // Clear success message after 2 seconds
+      setTimeout(() => {
+        setCopySuccess('');
+      }, 2000);
+    } catch (err) {
+      setCopySuccess('Fehler beim Kopieren');
+      console.error('Failed to copy logs: ', err);
+    }
+  };
+
   const getLogLevelClass = (log) => {
     const content = log.message.toLowerCase();
     if (content.includes('error') || content.includes('exception') || content.includes('fail')) {
@@ -190,46 +222,48 @@ function LogViewer() {
         </div>
 
         <div className="log-filters">
-          {logType === 'service' && (
-            <div className="service-selector">
+          <div className="filter-row">
+            {logType === 'service' && (
+              <div className="service-selector">
+                <select
+                  value={selectedService}
+                  onChange={handleServiceChange}
+                  className="service-select"
+                >
+                  <option value="">Wählen Sie einen Service</option>
+                  {services.map(service => (
+                    <option key={service.id} value={service.id}>
+                      {service.customName} ({service.domain})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="level-filter">
+              <label>Log-Level:</label>
               <select
-                value={selectedService}
-                onChange={handleServiceChange}
-                className="service-select"
+                value={filterLevel}
+                onChange={(e) => setFilterLevel(e.target.value)}
+                className="level-select"
               >
-                <option value="">Wählen Sie einen Service</option>
-                {services.map(service => (
-                  <option key={service.id} value={service.id}>
-                    {service.customName} ({service.domain})
-                  </option>
-                ))}
+                <option value="all">Alle</option>
+                <option value="ERROR">Error</option>
+                <option value="WARNING">Warning</option>
+                <option value="INFO">Info</option>
+                <option value="DEBUG">Debug</option>
               </select>
             </div>
-          )}
 
-          <div className="level-filter">
-            <label>Log-Level:</label>
-            <select
-              value={filterLevel}
-              onChange={(e) => setFilterLevel(e.target.value)}
-              className="level-select"
-            >
-              <option value="all">Alle</option>
-              <option value="ERROR">Error</option>
-              <option value="WARNING">Warning</option>
-              <option value="INFO">Info</option>
-              <option value="DEBUG">Debug</option>
-            </select>
-          </div>
-
-          <div className="log-filter">
-            <input
-              type="text"
-              placeholder="Logs filtern..."
-              value={filterText}
-              onChange={(e) => setFilterText(e.target.value)}
-              className="filter-input"
-            />
+            <div className="search-filter">
+              <input
+                type="text"
+                placeholder="Logs filtern..."
+                value={filterText}
+                onChange={(e) => setFilterText(e.target.value)}
+                className="filter-input"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -264,23 +298,63 @@ function LogViewer() {
         <div className="log-count">
           {filteredLogs.length} Logs angezeigt
           {filterText && ` (gefiltert aus ${logs.length})`}
+          {copySuccess && <span className="copy-success">{copySuccess}</span>}
         </div>
-        <div className="log-legend">
-          <div className="legend-item">
-            <span className="legend-color error-color"></span>
-            <span>Error</span>
+        <div className="log-actions-container">
+          <div className="copy-buttons">
+            <button
+              className="copy-button all-button"
+              onClick={() => copyToClipboard('all')}
+              title="Alle angezeigten Logs kopieren"
+            >
+              <span className="copy-icon">📋</span> Alle kopieren
+            </button>
+            <button
+              className="copy-button error-button"
+              onClick={() => copyToClipboard('error')}
+              title="Nur Error-Logs kopieren"
+            >
+              <span className="copy-icon">📋</span> Errors
+            </button>
+            <button
+              className="copy-button warning-button"
+              onClick={() => copyToClipboard('warning')}
+              title="Nur Warning-Logs kopieren"
+            >
+              <span className="copy-icon">📋</span> Warnings
+            </button>
+            <button
+              className="copy-button info-button"
+              onClick={() => copyToClipboard('info')}
+              title="Nur Info-Logs kopieren"
+            >
+              <span className="copy-icon">📋</span> Infos
+            </button>
+            <button
+              className="copy-button debug-button"
+              onClick={() => copyToClipboard('debug')}
+              title="Nur Debug-Logs kopieren"
+            >
+              <span className="copy-icon">📋</span> Debug
+            </button>
           </div>
-          <div className="legend-item">
-            <span className="legend-color warning-color"></span>
-            <span>Warning</span>
-          </div>
-          <div className="legend-item">
-            <span className="legend-color info-color"></span>
-            <span>Info</span>
-          </div>
-          <div className="legend-item">
-            <span className="legend-color debug-color"></span>
-            <span>Debug</span>
+          <div className="log-legend">
+            <div className="legend-item">
+              <span className="legend-color error-color"></span>
+              <span>Error</span>
+            </div>
+            <div className="legend-item">
+              <span className="legend-color warning-color"></span>
+              <span>Warning</span>
+            </div>
+            <div className="legend-item">
+              <span className="legend-color info-color"></span>
+              <span>Info</span>
+            </div>
+            <div className="legend-item">
+              <span className="legend-color debug-color"></span>
+              <span>Debug</span>
+            </div>
           </div>
         </div>
       </div>
