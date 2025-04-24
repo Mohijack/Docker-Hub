@@ -6,9 +6,9 @@ services:
     container_name: beyondfire-mongodb
     restart: unless-stopped
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USERNAME:-admin}
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD:-BeyondFireAdmin2023!}
-      - MONGO_INITDB_DATABASE=${MONGO_DATABASE:-beyondfire_cloud}
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=BeyondFireAdmin2023!
+      - MONGO_INITDB_DATABASE=beyondfire_cloud
     ports:
       - "27017:27017"
     volumes:
@@ -16,11 +16,11 @@ services:
       - mongodb-config:/data/configdb
     command: ["--auth", "--bind_ip_all"]
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping').ok", "--quiet", "--host", "localhost", "--port", "27017", "-u", "${MONGO_ROOT_USERNAME:-admin}", "-p", "${MONGO_ROOT_PASSWORD:-BeyondFireAdmin2023!}", "--authenticationDatabase", "admin"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 60s
+      test: ["CMD", "mongosh", "admin", "--eval", "db.adminCommand('ping').ok", "--quiet", "--host", "localhost", "--port", "27017", "-u", "admin", "-p", "BeyondFireAdmin2023!", "--authenticationDatabase", "admin"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
     networks:
       - beyondfire-network
 
@@ -32,66 +32,71 @@ services:
       beyondfire-mongodb:
         condition: service_healthy
     environment:
-      - MONGO_ROOT_USERNAME=${MONGO_ROOT_USERNAME:-admin}
-      - MONGO_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD:-BeyondFireAdmin2023!}
-      - MONGO_DATABASE=${MONGO_DATABASE:-beyondfire_cloud}
+      - MONGO_USERNAME=admin
+      - MONGO_PASSWORD=BeyondFireAdmin2023!
+      - MONGO_DATABASE=beyondfire_cloud
     command: >
-      mongosh --host beyondfire-mongodb:27017 -u ${MONGO_ROOT_USERNAME:-admin} -p ${MONGO_ROOT_PASSWORD:-BeyondFireAdmin2023!} --authenticationDatabase admin --eval "
-        const dbName = '${MONGO_DATABASE:-beyondfire_cloud}';
+      bash -c "
+      echo 'Waiting for MongoDB to be ready...' &&
+      sleep 10 &&
+      echo 'Initializing MongoDB...' &&
+      mongosh --host beyondfire-mongodb:27017 -u admin -p BeyondFireAdmin2023! --authenticationDatabase admin --eval '
+        const dbName = \"beyondfire_cloud\";
         const db = db.getSiblingDB(dbName);
 
-        // Create collections if they don't exist
-        if (!db.getCollectionNames().includes('users')) {
-          db.createCollection('users');
-          print('Created users collection');
+        // Create collections if they do not exist
+        if (!db.getCollectionNames().includes(\"users\")) {
+          db.createCollection(\"users\");
+          print(\"Created users collection\");
 
           // Create default admin user
           db.users.insertOne({
-            email: 'admin@beyondfire.cloud',
-            name: 'Admin',
-            password: '\$argon2id\$v=19\$m=65536,t=3,p=1\$tnFQzxFRMuYPJUOLlJQMYQ\$3Gg9PJSGSKGjEmKvx7b0yNGNGFHXpZ4IGIvYZjAOvFo', // AdminPW!
-            role: 'admin',
+            email: \"admin@beyondfire.cloud\",
+            name: \"Admin\",
+            password: \"\\$argon2id\\$v=19\\$m=65536,t=3,p=1\\$tnFQzxFRMuYPJUOLlJQMYQ\\$3Gg9PJSGSKGjEmKvx7b0yNGNGFHXpZ4IGIvYZjAOvFo\",
+            role: \"admin\",
             createdAt: new Date(),
             updatedAt: new Date()
           });
-          print('Created default admin user');
+          print(\"Created default admin user\");
         }
 
-        if (!db.getCollectionNames().includes('services')) {
-          db.createCollection('services');
-          print('Created services collection');
+        if (!db.getCollectionNames().includes(\"services\")) {
+          db.createCollection(\"services\");
+          print(\"Created services collection\");
 
           // Create default FE2 service
           db.services.insertOne({
-            id: 'fe2-docker',
-            name: 'FE2 - Feuerwehr Einsatzleitsystem',
-            description: 'Alamos FE2 - Professionelles Einsatzleitsystem für Feuerwehren',
+            id: \"fe2-docker\",
+            name: \"FE2 - Feuerwehr Einsatzleitsystem\",
+            description: \"Alamos FE2 - Professionelles Einsatzleitsystem für Feuerwehren\",
             price: 19.99,
-            image: 'alamosgmbh/fe2:latest',
+            image: \"alamosgmbh/fe2:latest\",
             resources: {
               cpu: 2,
-              memory: '2GB',
-              storage: '10GB'
+              memory: \"2GB\",
+              storage: \"10GB\"
             },
-            composeTemplate: 'version: \\'3\\'\\nservices:\\n  fe2_database:\\n    image: mongo:4.4.29\\n    ports:\\n      - 27017\\n    volumes:\\n      - fe2_db_data:/data/db\\n    restart: unless-stopped\\n\\n  fe2_app:\\n    image: alamosgmbh/fe2:2.36.100\\n    environment:\\n      - FE2_EMAIL={{FE2_EMAIL}}\\n      - FE2_PASSWORD={{FE2_PASSWORD}}\\n      - FE2_ACTIVATION_NAME=fe2_{{UNIQUE_ID}}\\n      - FE2_IP_MONGODB=fe2_database\\n      - FE2_PORT_MONGODB=27017\\n    ports:\\n      - 83\\n    volumes:\\n      - fe2_logs:/Logs\\n      - fe2_config:/Config\\n    restart: unless-stopped\\n    depends_on:\\n      - fe2_database\\n\\n  fe2_nginx:\\n    image: nginx:alpine\\n    ports:\\n      - \\'{{PORT}}:80\\'\\n    environment:\\n      - NGINX_HOST=localhost\\n    command: sh -c \\'echo \\\\'server { listen 80; location / { proxy_pass http://fe2_app:83; } }\\\\' > /etc/nginx/conf.d/default.conf && nginx -g \\\\'daemon off;\\\\'\\'\\n    restart: unless-stopped\\n    depends_on:\\n      - fe2_app\\n\\nvolumes:\\n  fe2_db_data:\\n  fe2_logs:\\n  fe2_config:\\n',
+            composeTemplate: \"version: \\\\\"3\\\\\"\\\\nservices:\\\\n  fe2_database:\\\\n    image: mongo:4.4.29\\\\n    ports:\\\\n      - 27017\\\\n    volumes:\\\\n      - fe2_db_data:/data/db\\\\n    restart: unless-stopped\\\\n\\\\n  fe2_app:\\\\n    image: alamosgmbh/fe2:2.36.100\\\\n    environment:\\\\n      - FE2_EMAIL={{FE2_EMAIL}}\\\\n      - FE2_PASSWORD={{FE2_PASSWORD}}\\\\n      - FE2_ACTIVATION_NAME=fe2_{{UNIQUE_ID}}\\\\n      - FE2_IP_MONGODB=fe2_database\\\\n      - FE2_PORT_MONGODB=27017\\\\n    ports:\\\\n      - 83\\\\n    volumes:\\\\n      - fe2_logs:/Logs\\\\n      - fe2_config:/Config\\\\n    restart: unless-stopped\\\\n    depends_on:\\\\n      - fe2_database\\\\n\\\\n  fe2_nginx:\\\\n    image: nginx:alpine\\\\n    ports:\\\\n      - \\\\\"{{PORT}}:80\\\\\"\\\\n    environment:\\\\n      - NGINX_HOST=localhost\\\\n    command: sh -c \\\\\"echo \\\\\\\\\\\\\"server { listen 80; location / { proxy_pass http://fe2_app:83; } }\\\\\\\\\\\\\" > /etc/nginx/conf.d/default.conf && nginx -g \\\\\\\\\\\\\"daemon off;\\\\\\\\\\\\\"\\\\\"\\\\n    restart: unless-stopped\\\\n    depends_on:\\\\n      - fe2_app\\\\n\\\\nvolumes:\\\\n  fe2_db_data:\\\\n  fe2_logs:\\\\n  fe2_config:\\\\n\",
             active: true,
             createdAt: new Date(),
             updatedAt: new Date()
           });
-          print('Created default FE2 service');
+          print(\"Created default FE2 service\");
         }
 
-        if (!db.getCollectionNames().includes('bookings')) {
-          db.createCollection('bookings');
-          print('Created bookings collection');
+        if (!db.getCollectionNames().includes(\"bookings\")) {
+          db.createCollection(\"bookings\");
+          print(\"Created bookings collection\");
         }
 
-        if (!db.getCollectionNames().includes('logs')) {
-          db.createCollection('logs');
-          print('Created logs collection');
+        if (!db.getCollectionNames().includes(\"logs\")) {
+          db.createCollection(\"logs\");
+          print(\"Created logs collection\");
         }
 
-        print('MongoDB initialization completed successfully');
+        print(\"MongoDB initialization completed successfully\");
+      '
       "
     networks:
       - beyondfire-network
@@ -103,22 +108,22 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=${NODE_ENV:-production}
-      - PORT=${PORT:-3000}
-      - PORTAINER_URL=${PORTAINER_URL:-http://192.168.200.170:9000}
-      - PORTAINER_USERNAME=${PORTAINER_USERNAME:-philipp}
-      - PORTAINER_PASSWORD=${PORTAINER_PASSWORD:-qwert123456!}
+      - NODE_ENV=production
+      - PORT=3000
+      - PORTAINER_URL=http://192.168.200.170:9000
+      - PORTAINER_USERNAME=philipp
+      - PORTAINER_PASSWORD=qwert123456!
       # - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}
       # - CLOUDFLARE_ZONE_ID=${CLOUDFLARE_ZONE_ID}
-      - JWT_SECRET=${JWT_SECRET:-yourSecureJWTSecret}
-      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-yourSecureRefreshSecret}
-      - SERVER_IP=${SERVER_IP:-192.168.200.170}
-      - MONGO_URI=mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD:-BeyondFireAdmin2023!}@beyondfire-mongodb:27017/${MONGO_DATABASE:-beyondfire_cloud}?authSource=admin
-      - MONGO_DATABASE=${MONGO_DATABASE:-beyondfire_cloud}
-      - RATE_LIMIT_WINDOW_MS=${RATE_LIMIT_WINDOW_MS:-15000}
-      - RATE_LIMIT_MAX=${RATE_LIMIT_MAX:-100}
-      - TOKEN_EXPIRY=${TOKEN_EXPIRY:-1h}
-      - REFRESH_TOKEN_EXPIRY=${REFRESH_TOKEN_EXPIRY:-7d}
+      - JWT_SECRET=beyondfire-jwt-secret-key-2023
+      - JWT_REFRESH_SECRET=beyondfire-refresh-secret-key-2023
+      - SERVER_IP=192.168.200.170
+      - MONGO_URI=mongodb://admin:BeyondFireAdmin2023!@beyondfire-mongodb:27017/beyondfire_cloud?authSource=admin
+      - MONGO_DATABASE=beyondfire_cloud
+      - RATE_LIMIT_WINDOW_MS=15000
+      - RATE_LIMIT_MAX=100
+      - TOKEN_EXPIRY=1h
+      - REFRESH_TOKEN_EXPIRY=7d
     volumes:
       - beyondfire-logs:/app/logs
     depends_on:
