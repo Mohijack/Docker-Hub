@@ -564,8 +564,8 @@ router.get('/admin/logs/:type', authenticateToken, requireAdmin, async (req, res
         { timestamp: generateTimestamp(18), message: 'Service booking initiated: fe2-docker' },
         { timestamp: generateTimestamp(15), message: 'DEBUG: API request sent to /api/bookings' },
         { timestamp: generateTimestamp(12), message: 'WARNING: Slow API response detected (2.5s)' },
-        { timestamp: generateTimestamp(10), message: 'ERROR: Failed to load service details - Network timeout' },
-        { timestamp: generateTimestamp(8), message: 'DEBUG: Retrying API request' },
+        { timestamp: generateTimestamp(10), message: 'INFO: Service details loaded successfully' },
+        { timestamp: generateTimestamp(8), message: 'DEBUG: Processing service data' },
         { timestamp: generateTimestamp(5), message: 'INFO: Service booking completed successfully' },
         { timestamp: generateTimestamp(2), message: 'DEBUG: Updating UI components' },
         { timestamp: generateTimestamp(1), message: 'INFO: User session extended' }
@@ -579,8 +579,8 @@ router.get('/admin/logs/:type', authenticateToken, requireAdmin, async (req, res
         { timestamp: generateTimestamp(18), message: 'INFO: Booking created: fe2-docker for user 123456' },
         { timestamp: generateTimestamp(15), message: 'DEBUG: Generating docker-compose file' },
         { timestamp: generateTimestamp(12), message: 'WARNING: High CPU usage detected (85%)' },
-        { timestamp: generateTimestamp(10), message: 'ERROR: Database connection timeout - Reconnecting' },
-        { timestamp: generateTimestamp(8), message: 'DEBUG: Database reconnection successful' },
+        { timestamp: generateTimestamp(10), message: 'INFO: Database connection stable' },
+        { timestamp: generateTimestamp(8), message: 'DEBUG: Database query executed successfully' },
         { timestamp: generateTimestamp(5), message: 'INFO: Service deployment initiated' },
         { timestamp: generateTimestamp(2), message: 'DEBUG: Portainer API request sent' }
       ];
@@ -626,8 +626,8 @@ router.get('/admin/logs/service/:id', authenticateToken, requireAdmin, async (re
       { timestamp: generateTimestamp(10), message: 'DEBUG: Performing scheduled health check' },
       { timestamp: generateTimestamp(8), message: 'INFO: Health check passed' },
       { timestamp: generateTimestamp(5), message: 'DEBUG: Processing incoming request' },
-      { timestamp: generateTimestamp(3), message: 'ERROR: Failed to connect to database - retrying' },
-      { timestamp: generateTimestamp(2), message: 'INFO: Database connection restored' },
+      { timestamp: generateTimestamp(3), message: 'INFO: Database query completed' },
+      { timestamp: generateTimestamp(2), message: 'INFO: Request processed successfully' },
       { timestamp: generateTimestamp(1), message: 'DEBUG: Updating service metrics' }
     ];
 

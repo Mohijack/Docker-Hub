@@ -20,14 +20,13 @@ function Navbar({ user, onLogout }) {
     <nav className="navbar">
       <div className="navbar-container">
         <Link to="/" className="navbar-logo">
-          <img src="/logo.svg" alt="BeyondFire Cloud Logo" width="200" height="40" />
           <span>BeyondFire Cloud</span>
         </Link>
 
         <div className="navbar-menu">
           <Link to="/" className="navbar-item">Home</Link>
-          <Link to="/#features" className="navbar-item">Vorteile</Link>
-          <Link to="/#services" className="navbar-item">Dienste</Link>
+          <a href="/#features" className="navbar-item">Vorteile</a>
+          <a href="/#services" className="navbar-item">Dienste</a>
 
           {user ? (
             <>
