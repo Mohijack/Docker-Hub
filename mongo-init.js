@@ -1,36 +1,21 @@
 // MongoDB initialization script
 // This script will be executed when the MongoDB container starts for the first time
 
-// Connect to admin database with root credentials
-db = db.getSiblingDB('admin');
+// Connect to the application database
+db = db.getSiblingDB('beyondfire_cloud');
 
 // Check if the database already exists
-const dbExists = db.getCollectionNames().includes('system.users');
+const dbExists = db.getCollectionNames().length > 0;
 
 if (!dbExists) {
   print('Initializing MongoDB...');
 
-  // Create a database user for the application
-  db.createUser({
-    user: 'admin',
-    pwd: 'BeyondFireAdmin2023!',
-    roles: [
-      { role: 'userAdminAnyDatabase', db: 'admin' },
-      { role: 'readWriteAnyDatabase', db: 'admin' },
-      { role: 'dbAdminAnyDatabase', db: 'admin' }
-    ]
-  });
-  print('Created admin user for authentication');
-
-  // Create the application database
-  const appDb = db.getSiblingDB('beyondfire_cloud');
-
   // Create collections
-  appDb.createCollection('users');
+  db.createCollection('users');
   print('Created users collection');
 
   // Create default admin user
-  appDb.users.insertOne({
+  db.users.insertOne({
     email: 'admin@beyondfire.cloud',
     name: 'Admin',
     password: '$argon2id$v=19$m=65536,t=3,p=1$tnFQzxFRMuYPJUOLlJQMYQ$3Gg9PJSGSKGjEmKvx7b0yNGNGFHXpZ4IGIvYZjAOvFo', // AdminPW!
@@ -41,11 +26,11 @@ if (!dbExists) {
   print('Created default admin user');
 
   // Create services collection
-  appDb.createCollection('services');
+  db.createCollection('services');
   print('Created services collection');
 
   // Create default FE2 service
-  appDb.services.insertOne({
+  db.services.insertOne({
     id: 'fe2-docker',
     name: 'FE2 - Feuerwehr Einsatzleitsystem',
     description: 'Alamos FE2 - Professionelles Einsatzleitsystem für Feuerwehren',
@@ -64,23 +49,12 @@ if (!dbExists) {
   print('Created default FE2 service');
 
   // Create bookings collection
-  appDb.createCollection('bookings');
+  db.createCollection('bookings');
   print('Created bookings collection');
 
   // Create logs collection
-  appDb.createCollection('logs');
+  db.createCollection('logs');
   print('Created logs collection');
-
-  // Create a specific user for the beyondfire_cloud database
-  db.createUser({
-    user: 'beyondfire',
-    pwd: 'BeyondFireAdmin2023!',
-    roles: [
-      { role: 'readWrite', db: 'beyondfire_cloud' },
-      { role: 'dbAdmin', db: 'beyondfire_cloud' }
-    ]
-  });
-  print('Created beyondfire user for beyondfire_cloud database');
 
   print('MongoDB initialization completed successfully');
 } else {

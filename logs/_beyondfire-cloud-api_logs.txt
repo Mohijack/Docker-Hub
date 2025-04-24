@@ -1,0 +1,40 @@
+2025-04-24 20:40:30 info: Starting BeyondFire Cloud API server
+2025-04-24 20:40:30 info: Environment: production
+2025-04-24 20:40:30 info: Connecting to MongoDB...
+2025-04-24 20:40:31 error: MongoDB connection error: Authentication failed.
+2025-04-24 20:40:32 info: Starting BeyondFire Cloud API server
+2025-04-24 20:40:32 info: Environment: production
+2025-04-24 20:40:32 info: Connecting to MongoDB...
+2025-04-24 20:40:32 error: MongoDB connection error: Authentication failed.
+2025-04-24 20:40:34 info: Starting BeyondFire Cloud API server
+2025-04-24 20:40:34 info: Environment: production
+2025-04-24 20:40:34 info: Connecting to MongoDB...
+2025-04-24 20:40:34 error: MongoDB connection error: Authentication failed.
+2025-04-24 20:40:35 info: Starting BeyondFire Cloud API server
+2025-04-24 20:40:35 info: Environment: production
+2025-04-24 20:40:35 info: Connecting to MongoDB...
+2025-04-24 20:40:35 error: MongoDB connection error: Authentication failed.
+2025-04-24 20:40:37 info: Starting BeyondFire Cloud API server
+2025-04-24 20:40:37 info: Environment: production
+2025-04-24 20:40:37 info: Connecting to MongoDB...
+2025-04-24 20:40:37 error: MongoDB connection error: Authentication failed.
+2025-04-24 20:40:39 info: Starting BeyondFire Cloud API server
+2025-04-24 20:40:39 info: Environment: production
+2025-04-24 20:40:39 info: Connecting to MongoDB...
+2025-04-24 20:40:39 error: MongoDB connection error: Authentication failed.
+2025-04-24 20:40:43 info: Starting BeyondFire Cloud API server
+2025-04-24 20:40:43 info: Environment: production
+2025-04-24 20:40:43 info: Connecting to MongoDB...
+2025-04-24 20:40:43 error: MongoDB connection error: Authentication failed.
+2025-04-24 20:40:51 info: Starting BeyondFire Cloud API server
+2025-04-24 20:40:51 info: Environment: production
+2025-04-24 20:40:51 info: Connecting to MongoDB...
+2025-04-24 20:40:51 error: MongoDB connection error: Authentication failed.
+2025-04-24 20:41:04 info: Starting BeyondFire Cloud API server
+2025-04-24 20:41:04 info: Environment: production
+2025-04-24 20:41:04 info: Connecting to MongoDB...
+2025-04-24 20:41:04 error: MongoDB connection error: Authentication failed.
+2025-04-24 20:41:31 info: Starting BeyondFire Cloud API server
+2025-04-24 20:41:31 info: Environment: production
+2025-04-24 20:41:31 info: Connecting to MongoDB...
+2025-04-24 20:41:31 error: MongoDB connection error: Authentication failed.

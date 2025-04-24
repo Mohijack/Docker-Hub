@@ -6,8 +6,6 @@ services:
     container_name: beyondfire-mongodb
     restart: unless-stopped
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=admin
-      - MONGO_INITDB_ROOT_PASSWORD=BeyondFireAdmin2023!
       - MONGO_INITDB_DATABASE=beyondfire_cloud
     ports:
       - "27017:27017"
@@ -15,14 +13,14 @@ services:
       - mongodb-data:/data/db
       - mongodb-config:/data/configdb
       - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
-    command: ["--auth", "--bind_ip_all"]
-    # Simplified healthcheck that doesn't require authentication
+    command: ["--bind_ip_all", "--ipv6"]
+    # Simple healthcheck without authentication
     healthcheck:
       test: ["CMD", "mongo", "--eval", "db.stats().ok"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 120s
+      start_period: 30s
     networks:
       - beyondfire-network
 
@@ -45,7 +43,7 @@ services:
       - JWT_SECRET=${JWT_SECRET:-beyondfire-jwt-secret-key-2023}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-beyondfire-refresh-secret-key-2023}
       - SERVER_IP=${SERVER_IP}
-      - MONGO_URI=mongodb://beyondfire:BeyondFireAdmin2023!@beyondfire-mongodb:27017/beyondfire_cloud?authSource=admin
+      - MONGO_URI=mongodb://172.18.0.2:27017/beyondfire_cloud
       - MONGO_DATABASE=beyondfire_cloud
       - RATE_LIMIT_WINDOW_MS=15000
       - RATE_LIMIT_MAX=100
@@ -54,8 +52,7 @@ services:
     volumes:
       - beyondfire-logs:/app/logs
     depends_on:
-      beyondfire-mongodb:
-        condition: service_started
+      - beyondfire-mongodb
     networks:
       - beyondfire-network
 
