@@ -222,7 +222,31 @@
                 // Display request headers
                 requestHeadersElement.textContent = formatHeaders(headers) + '\n\nBody: ' + body;
 
-                // Send request
+                // Try the login test route first
+                try {
+                    const testResponse = await fetch('/login-test/login', {
+                        method: 'POST',
+                        headers: headers,
+                        body: body,
+                        cache: 'no-cache'
+                    });
+
+                    // Display response headers
+                    responseHeadersElement.textContent = formatHeaders(testResponse.headers);
+
+                    // Display response body
+                    const contentType = testResponse.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        const data = await testResponse.json();
+                        resultElement.textContent = `Status: ${testResponse.status}\nData: ${JSON.stringify(data, null, 2)}\n\nUsing login test route`;
+                        return;
+                    }
+                } catch (testError) {
+                    console.log('Login test route not available:', testError);
+                    // Continue with the regular API
+                }
+
+                // Send request to the regular API
                 const response = await fetch('/api/auth/login', {
                     method: 'POST',
                     headers: headers,

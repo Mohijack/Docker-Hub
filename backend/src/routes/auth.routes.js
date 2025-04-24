@@ -65,12 +65,14 @@ router.post('/login', async (req, res) => {
     const clientIp = req.ip;
     const xForwardedFor = req.headers['x-forwarded-for'];
     const userAgent = req.headers['user-agent'] || 'Unknown';
+    const originalUrl = req.originalUrl;
 
     logger.info('Login attempt received', {
       body: req.body,
       clientIp,
       xForwardedFor,
-      userAgent
+      userAgent,
+      originalUrl
     });
 
     // Simple login for testing
