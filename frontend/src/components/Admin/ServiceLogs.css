@@ -219,6 +219,7 @@
   justify-content: space-between;
   align-items: center;
   width: 100%;
+  margin-top: 10px;
 }
 
 .copy-button {
@@ -266,6 +267,10 @@
   display: flex;
   gap: 16px;
   margin-top: 8px;
+}
+
+.button-container {
+  margin-left: 30px;
 }
 
 .legend-item {
@@ -369,8 +374,18 @@
     align-items: flex-start;
   }
 
-  .copy-buttons {
-    justify-content: flex-start;
+  .log-bottom-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .button-container {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .copy-button {
     width: 100%;
   }
 }

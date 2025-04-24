@@ -94,8 +94,34 @@ function ServiceLogs({ serviceId, serviceName, onClose }) {
         `${log.timestamp} [${getLogLevel(log)}] ${log.message}`
       ).join('\n');
 
-      navigator.clipboard.writeText(formattedLogs);
-      setCopySuccess('Logs kopiert!');
+      // Fallback method for copying text
+      const textArea = document.createElement('textarea');
+      textArea.value = formattedLogs;
+
+      // Make the textarea out of viewport
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      textArea.style.top = '-999999px';
+      document.body.appendChild(textArea);
+
+      // Select and copy the text
+      textArea.focus();
+      textArea.select();
+
+      const successful = document.execCommand('copy');
+      document.body.removeChild(textArea);
+
+      if (successful) {
+        setCopySuccess('Logs kopiert!');
+      } else {
+        // Try the modern API as fallback
+        navigator.clipboard.writeText(formattedLogs)
+          .then(() => setCopySuccess('Logs kopiert!'))
+          .catch(err => {
+            setCopySuccess('Fehler beim Kopieren');
+            console.error('Failed to copy logs: ', err);
+          });
+      }
 
       // Clear success message after 2 seconds
       setTimeout(() => {
@@ -239,14 +265,16 @@ function ServiceLogs({ serviceId, serviceName, onClose }) {
                 </div>
               </div>
 
-              <button
-                className="copy-button"
-                onClick={copyToClipboard}
-                title="Gefilterte Logs kopieren"
-                disabled={filteredLogs.length === 0}
-              >
-                <span className="copy-icon">📋</span> Logs kopieren
-              </button>
+              <div className="button-container">
+                <button
+                  className="copy-button"
+                  onClick={copyToClipboard}
+                  title="Gefilterte Logs kopieren"
+                  disabled={filteredLogs.length === 0}
+                >
+                  <span className="copy-icon">📋</span> Logs kopieren
+                </button>
+              </div>
             </div>
           </div>
         </div>
