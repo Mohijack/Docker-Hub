@@ -374,6 +374,34 @@ try {
     const loginTestRoutes = require('./routes/login-test');
     app.use('/login-test', loginTestRoutes);
 
+    // Temporary route to check admin user
+    app.get('/api/check-admin', async (req, res) => {
+      try {
+        // Find admin user
+        const User = mongoose.model('User');
+        const adminUser = await User.findOne({ email: 'admin@beyondfire.cloud' });
+
+        if (!adminUser) {
+          return res.status(404).json({ error: 'Admin user not found' });
+        }
+
+        // Return admin user info (without sensitive data)
+        const adminInfo = {
+          id: adminUser._id,
+          email: adminUser.email,
+          name: adminUser.name,
+          role: adminUser.role,
+          permissions: adminUser.permissions,
+          createdAt: adminUser.createdAt
+        };
+
+        res.json({ adminUser: adminInfo });
+      } catch (error) {
+        logger.error('Check admin error:', error);
+        res.status(500).json({ error: 'Failed to check admin user' });
+      }
+    });
+
     // API 404 handler - MUST be defined AFTER routes
     app.use('/api/*', (req, res) => {
       logger.warn(`API route not found: ${req.method} ${req.originalUrl}`, {
