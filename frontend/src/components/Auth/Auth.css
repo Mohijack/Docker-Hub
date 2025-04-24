@@ -85,3 +85,28 @@
 .auth-link span:hover {
   color: #3a7bc8;
 }
+
+.auth-back-link {
+  margin-top: 15px;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.auth-back-link span {
+  color: #666;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.auth-back-link span:hover {
+  color: #333;
+}
+
+.admin-info {
+  margin-top: 30px;
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+  font-size: 0.85rem;
+  color: #888;
+  text-align: center;
+}

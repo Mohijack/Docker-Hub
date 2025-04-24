@@ -64,10 +64,35 @@ function BookingProcess() {
     });
   };
 
+  const deleteBooking = async (bookingId) => {
+    try {
+      const token = localStorage.getItem('token');
+
+      const response = await fetch(`/api/bookings/${bookingId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        console.error('Failed to delete booking:', await response.text());
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error deleting booking:', error);
+      return false;
+    }
+  };
+
   const handleDeployService = async () => {
     setLoading(true);
     setError('');
     setSuccess('');
+
+    let createdBookingId = null;
 
     try {
       const token = localStorage.getItem('token');
@@ -98,6 +123,7 @@ function BookingProcess() {
 
       // Extract booking ID from the response
       const bookingId = bookData.booking?.id;
+      createdBookingId = bookingId;
 
       if (!bookingId) {
         throw new Error('Keine Buchungs-ID in der Antwort gefunden');
@@ -124,18 +150,22 @@ function BookingProcess() {
       const deployData = await deployResponse.json();
 
       if (!deployResponse.ok) {
-        // If deployment fails, we still want to proceed to the next step
-        // since the service was booked successfully
-        setError(`Deployment konnte nicht gestartet werden: ${deployData.error || 'Unbekannter Fehler'}. Sie können den Deployment-Prozess später im Dashboard erneut starten.`);
+        // If deployment fails, delete the booking
+        const deleted = await deleteBooking(bookingId);
 
-        setDeploymentStatus(prev => ({
-          ...prev,
-          status: 'deployment_failed'
-        }));
+        if (deleted) {
+          setError(`Deployment konnte nicht gestartet werden: ${deployData.error || 'Unbekannter Fehler'}. Der unvollständige Service wurde gelöscht. Bitte versuchen Sie es erneut.`);
+        } else {
+          setError(`Deployment konnte nicht gestartet werden: ${deployData.error || 'Unbekannter Fehler'}. Der Service konnte nicht automatisch gelöscht werden. Bitte wenden Sie sich an den Support.`);
+        }
 
-        // Move to the next step
-        setCurrentStep(4);
-        navigate('/booking?step=4');
+        setDeploymentStatus({
+          bookingId: null,
+          serviceName: '',
+          subdomain: '',
+          status: 'deleted'
+        });
+
         return;
       }
 
@@ -161,6 +191,16 @@ function BookingProcess() {
       } else {
         setError(`Fehler: ${error.message}`);
       }
+
+      // If a booking was created but deployment failed, try to delete it
+      if (createdBookingId) {
+        try {
+          await deleteBooking(createdBookingId);
+          console.log('Cleaned up incomplete booking:', createdBookingId);
+        } catch (cleanupError) {
+          console.error('Failed to clean up incomplete booking:', cleanupError);
+        }
+      }
     } finally {
       setLoading(false);
     }
@@ -176,13 +216,13 @@ function BookingProcess() {
             <div className="step-actions">
               <button
                 className="btn-primary"
-                onClick={() => navigate('/register')}
+                onClick={() => navigate('/register?redirect=booking')}
               >
                 Registrieren
               </button>
               <button
                 className="btn-secondary"
-                onClick={() => navigate('/login')}
+                onClick={() => navigate('/login-step')}
               >
                 Anmelden
               </button>

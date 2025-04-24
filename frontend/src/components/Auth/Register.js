@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 function Register() {
   const [formData, setFormData] = useState({
@@ -11,6 +11,8 @@ function Register() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const isBookingRedirect = new URLSearchParams(location.search).get('redirect') === 'booking';
 
   const handleChange = (e) => {
     setFormData({
@@ -39,8 +41,12 @@ function Register() {
         throw new Error(data.error || 'Registration failed');
       }
 
-      // Registration successful, redirect to login
-      navigate('/login', { state: { message: 'Registration successful! Please log in.' } });
+      // Registration successful, redirect to appropriate login page
+      if (isBookingRedirect) {
+        navigate('/login-step', { state: { message: 'Registrierung erfolgreich! Bitte melden Sie sich an, um mit dem Buchungsprozess fortzufahren.' } });
+      } else {
+        navigate('/login', { state: { message: 'Registrierung erfolgreich! Bitte melden Sie sich an.' } });
+      }
     } catch (error) {
       setError(error.message);
     } finally {
@@ -100,8 +106,13 @@ function Register() {
         </form>
         <p className="auth-link">
           Bereits ein Konto?{' '}
-          <span onClick={() => navigate('/login')}>Anmelden</span>
+          <span onClick={() => navigate(isBookingRedirect ? '/login-step' : '/login')}>Anmelden</span>
         </p>
+        {isBookingRedirect && (
+          <div className="auth-back-link">
+            <span onClick={() => navigate('/booking')}>Zurück zum Buchungsprozess</span>
+          </div>
+        )}
       </div>
     </div>
   );
