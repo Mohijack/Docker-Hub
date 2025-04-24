@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const logger = require('../utils/logger');
+const { logger } = require('../utils/logger');
 const portainerService = require('../integrations/portainer');
 const cloudflareService = require('../integrations/cloudflare');
 const dockerServiceModel = require('../models/docker-service');

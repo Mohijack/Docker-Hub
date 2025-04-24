@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const path = require('path');
 const config = require('../utils/config');
-const logger = require('../utils/logger');
+const { logger } = require('../utils/logger');
 
 // In a real application, this would be a database
 // For this demo, we'll use a simple JSON file
