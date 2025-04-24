@@ -166,27 +166,36 @@ try {
           return res.status(400).json({ error: 'Email and password are required' });
         }
 
-        // Check if email and password match the admin credentials
-        if (email === 'admin@beyondfire.cloud' && password === 'AdminPW!') {
-          // Generate a simple token
-          const token = 'test-token-' + Date.now();
+        // Use the auth service for login
+        const authService = require('./services/auth.service');
+        const result = await authService.login(email, password, userAgent, clientIp);
 
-          logger.info('Login successful', { email, clientIp, xForwardedFor });
-
-          return res.json({
-            message: 'Login successful',
-            user: {
-              email,
-              name: 'Admin',
-              role: 'admin'
-            },
-            accessToken: token
-          });
+        if (!result.success) {
+          if (result.require2FA) {
+            return res.status(200).json({
+              require2FA: true,
+              tempToken: result.tempToken
+            });
+          }
+          logger.warn('Login failed - Invalid credentials', { email, clientIp, xForwardedFor });
+          return res.status(401).json({ error: result.message || 'Invalid credentials' });
         }
 
-        // If credentials don't match, return error
-        logger.warn('Login failed - Invalid credentials', { email, clientIp, xForwardedFor });
-        return res.status(401).json({ error: 'Invalid credentials' });
+        // Set refresh token as HTTP-only cookie
+        res.cookie('refreshToken', result.refreshToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'strict',
+          maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
+
+        logger.info('Login successful', { email, clientIp, xForwardedFor });
+
+        return res.json({
+          message: 'Login successful',
+          user: result.user,
+          accessToken: result.accessToken
+        });
       } catch (error) {
         logger.error('Login error:', error);
         res.status(500).json({ error: 'Login failed' });
@@ -203,36 +212,19 @@ try {
           return res.status(400).json({ error: 'Email, password, and name are required' });
         }
 
-        // Check if user already exists in database
-        const User = mongoose.model('User');
-        const existingUser = await User.findOne({ email });
+        // Use the auth service for registration
+        const authService = require('./services/auth.service');
+        const result = await authService.register({ email, password, name, company });
 
-        if (existingUser) {
-          return res.status(400).json({ error: 'User already exists' });
+        if (!result.success) {
+          return res.status(400).json({ error: result.message });
         }
-
-        // Create new user
-        const newUser = new User({
-          email,
-          password: password, // Temporarily store password in plain text
-          name,
-          company: company || '',
-          role: 'user',
-          createdAt: new Date(),
-          updatedAt: new Date()
-        });
-
-        await newUser.save();
 
         logger.info('User registered successfully', { email });
 
         res.status(201).json({
           message: 'Registration successful',
-          user: {
-            email: newUser.email,
-            name: newUser.name,
-            role: newUser.role
-          }
+          user: result.user
         });
       } catch (error) {
         logger.error('Registration error:', error);
@@ -243,15 +235,48 @@ try {
     // Direct user profile route
     app.get('/api/users/profile', async (req, res) => {
       try {
-        // This would normally check the JWT token
-        // For now, just return the admin user
-        res.json({
-          user: {
-            email: 'admin@beyondfire.cloud',
-            name: 'Admin',
-            role: 'admin'
+        // Get the authorization header
+        const authHeader = req.headers['authorization'];
+        const token = authHeader && authHeader.split(' ')[1];
+
+        if (!token) {
+          return res.status(401).json({ error: 'Access denied. No token provided.' });
+        }
+
+        try {
+          // Verify the token
+          const jwt = require('jsonwebtoken');
+          const config = require('./utils/config');
+          const decoded = jwt.verify(token, config.jwt.secret);
+
+          // Get the user from the database
+          const User = mongoose.model('User');
+          const user = await User.findById(decoded.id);
+
+          if (!user) {
+            return res.status(404).json({ error: 'User not found' });
           }
-        });
+
+          // Return the user profile
+          res.json({
+            user: {
+              id: user._id,
+              email: user.email,
+              name: user.name,
+              role: user.role,
+              company: user.company
+            }
+          });
+        } catch (error) {
+          if (error.name === 'TokenExpiredError') {
+            return res.status(401).json({
+              error: 'Token expired',
+              tokenExpired: true
+            });
+          }
+
+          return res.status(403).json({ error: 'Invalid token' });
+        }
       } catch (error) {
         logger.error('Profile error:', error);
         res.status(500).json({ error: 'Failed to get profile' });
@@ -269,6 +294,73 @@ try {
       } catch (error) {
         logger.error('Services error:', error);
         res.status(500).json({ error: 'Failed to get services' });
+      }
+    });
+
+    // Token refresh route
+    app.post('/api/auth/refresh-token', async (req, res) => {
+      try {
+        // Get refresh token from cookie or request body
+        const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
+
+        if (!refreshToken) {
+          return res.status(400).json({ error: 'Refresh token is required' });
+        }
+
+        // Get client information
+        const clientIp = req.ip;
+        const userAgent = req.headers['user-agent'] || 'Unknown';
+
+        // Use the auth service to refresh the token
+        const authService = require('./services/auth.service');
+        const result = await authService.refreshToken(refreshToken, userAgent, clientIp);
+
+        if (!result.success) {
+          return res.status(401).json({ error: result.message });
+        }
+
+        // Set new refresh token as HTTP-only cookie
+        res.cookie('refreshToken', result.refreshToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'strict',
+          maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
+
+        // Return new access token
+        res.json({
+          accessToken: result.accessToken
+        });
+      } catch (error) {
+        logger.error('Token refresh error:', error);
+        res.status(500).json({ error: 'Token refresh failed' });
+      }
+    });
+
+    // Logout route
+    app.post('/api/auth/logout', async (req, res) => {
+      try {
+        // Get refresh token from cookie or request body
+        const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
+
+        if (!refreshToken) {
+          // If no refresh token, just clear the cookie and return success
+          res.clearCookie('refreshToken');
+          return res.json({ message: 'Logged out' });
+        }
+
+        // Use the auth service to logout
+        const authService = require('./services/auth.service');
+        const result = await authService.logout(refreshToken);
+
+        // Clear the refresh token cookie
+        res.clearCookie('refreshToken');
+
+        // Return success
+        res.json({ message: 'Logged out' });
+      } catch (error) {
+        logger.error('Logout error:', error);
+        res.status(500).json({ error: 'Logout failed' });
       }
     });
 
