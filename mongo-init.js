@@ -1,6 +1,25 @@
 // MongoDB initialization script
 // This script will be executed when the MongoDB container starts for the first time
 
+// Connect to admin database with root credentials (already authenticated by Docker)
+db = db.getSiblingDB('admin');
+
+// Create a database user for the application if it doesn't exist
+const adminUserExists = db.getUser('admin');
+if (!adminUserExists) {
+  print('Creating admin user...');
+  db.createUser({
+    user: 'admin',
+    pwd: 'BeyondFireAdmin2023!',
+    roles: [
+      { role: 'userAdminAnyDatabase', db: 'admin' },
+      { role: 'readWriteAnyDatabase', db: 'admin' },
+      { role: 'dbAdminAnyDatabase', db: 'admin' }
+    ]
+  });
+  print('Admin user created successfully');
+}
+
 // Connect to the application database
 db = db.getSiblingDB('beyondfire_cloud');
 

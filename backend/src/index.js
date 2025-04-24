@@ -48,6 +48,7 @@ try {
     const routes = require('./routes');
     const cloudflareService = require('./integrations/cloudflare');
     const { apiLimiter } = require('./middleware/security.middleware');
+    const bcrypt = require('bcryptjs');
 
     const app = express();
     const PORT = config.port || 3000;
@@ -193,7 +194,86 @@ try {
       }
     });
 
-    // Debug middleware for all requests - MUST be defined BEFORE routes
+    // Direct register route
+    app.post('/api/auth/register', async (req, res) => {
+      try {
+        const { email, password, name, company } = req.body;
+
+        // Simple validation
+        if (!email || !password || !name) {
+          return res.status(400).json({ error: 'Email, password, and name are required' });
+        }
+
+        // Check if user already exists in database
+        const User = mongoose.model('User');
+        const existingUser = await User.findOne({ email });
+
+        if (existingUser) {
+          return res.status(400).json({ error: 'User already exists' });
+        }
+
+        // Create new user
+        const newUser = new User({
+          email,
+          password: await bcrypt.hash(password, 10),
+          name,
+          company: company || '',
+          role: 'user',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+
+        await newUser.save();
+
+        logger.info('User registered successfully', { email });
+
+        res.status(201).json({
+          message: 'Registration successful',
+          user: {
+            email: newUser.email,
+            name: newUser.name,
+            role: newUser.role
+          }
+        });
+      } catch (error) {
+        logger.error('Registration error:', error);
+        res.status(500).json({ error: 'Registration failed' });
+      }
+    });
+
+    // Direct user profile route
+    app.get('/api/users/profile', async (req, res) => {
+      try {
+        // This would normally check the JWT token
+        // For now, just return the admin user
+        res.json({
+          user: {
+            email: 'admin@beyondfire.cloud',
+            name: 'Admin',
+            role: 'admin'
+          }
+        });
+      } catch (error) {
+        logger.error('Profile error:', error);
+        res.status(500).json({ error: 'Failed to get profile' });
+      }
+    });
+
+    // Direct services route
+    app.get('/api/services', async (req, res) => {
+      try {
+        // Get services from database
+        const Service = mongoose.model('Service');
+        const services = await Service.find({ active: true });
+
+        res.json({ services });
+      } catch (error) {
+        logger.error('Services error:', error);
+        res.status(500).json({ error: 'Failed to get services' });
+      }
+    });
+
+    // Debug middleware for all requests
     app.use((req, res, next) => {
       logger.debug(`Request received: ${req.method} ${req.originalUrl}`, {
         baseUrl: req.baseUrl,
@@ -203,9 +283,6 @@ try {
       });
       next();
     });
-
-    // API Routes
-    app.use('/api', routes);
 
     // Direct login test route
     const loginTestRoutes = require('./routes/login-test');
