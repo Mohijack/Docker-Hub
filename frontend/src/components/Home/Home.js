@@ -117,10 +117,7 @@ function Home() {
             </div>
           </div>
 
-          <div className="how-it-works-cta">
-            <p>Bereit, Ihr eigenes FE2-System in der Cloud zu starten?</p>
-            <Link to="/booking" className="btn-primary">Jetzt starten</Link>
-          </div>
+
         </div>
       </section>
     </div>
