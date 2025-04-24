@@ -322,6 +322,10 @@ try {
       next();
     });
 
+    // Add cookie-parser middleware
+    const cookieParser = require('cookie-parser');
+    app.use(cookieParser());
+
     // User routes
     const userRoutes = require('./routes/user.routes');
     app.use('/api/users', userRoutes);
@@ -333,6 +337,90 @@ try {
     // Direct login test route
     const loginTestRoutes = require('./routes/login-test');
     app.use('/login-test', loginTestRoutes);
+
+    // Temporary route to check admin user
+    app.get('/api/check-admin', async (req, res) => {
+      try {
+        // Find admin user
+        const User = mongoose.model('User');
+        const adminUser = await User.findOne({ email: 'admin@beyondfire.cloud' });
+
+        if (!adminUser) {
+          return res.status(404).json({ error: 'Admin user not found' });
+        }
+
+        // Return admin user info (without sensitive data)
+        const adminInfo = {
+          id: adminUser._id,
+          email: adminUser.email,
+          name: adminUser.name,
+          role: adminUser.role,
+          permissions: adminUser.permissions,
+          createdAt: adminUser.createdAt
+        };
+
+        res.json({ adminUser: adminInfo });
+      } catch (error) {
+        logger.error('Check admin error:', error);
+        res.status(500).json({ error: 'Failed to check admin user' });
+      }
+    });
+
+    // Temporary route to create admin user
+    app.post('/api/create-admin', async (req, res) => {
+      try {
+        // Check if admin user already exists
+        const User = mongoose.model('User');
+        const existingAdmin = await User.findOne({ email: 'admin@beyondfire.cloud' });
+
+        if (existingAdmin) {
+          return res.json({
+            message: 'Admin user already exists',
+            user: {
+              id: existingAdmin._id,
+              email: existingAdmin.email,
+              name: existingAdmin.name,
+              role: existingAdmin.role
+            }
+          });
+        }
+
+        // Create admin user
+        const adminUser = new User({
+          email: 'admin@beyondfire.cloud',
+          password: 'AdminPW!',
+          name: 'Admin',
+          role: 'admin',
+          permissions: [
+            // User permissions
+            'user:read', 'user:create', 'user:update', 'user:delete',
+            // Service permissions
+            'service:read', 'service:create', 'service:update', 'service:delete',
+            // Booking permissions
+            'booking:read', 'booking:create', 'booking:update', 'booking:delete',
+            // Admin permissions
+            'admin:access', 'admin:logs', 'admin:settings'
+          ]
+        });
+
+        await adminUser.save();
+
+        logger.info('Admin user created successfully');
+
+        res.status(201).json({
+          message: 'Admin user created successfully',
+          user: {
+            id: adminUser._id,
+            email: adminUser.email,
+            name: adminUser.name,
+            role: adminUser.role
+          }
+        });
+      } catch (error) {
+        logger.error('Create admin error:', error);
+        res.status(500).json({ error: 'Failed to create admin user' });
+      }
+    });
 
     // API 404 handler - MUST be defined AFTER routes
     app.use('/api/*', (req, res) => {
