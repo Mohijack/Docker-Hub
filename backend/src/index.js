@@ -166,48 +166,8 @@ try {
           return res.status(400).json({ error: 'Email and password are required' });
         }
 
-        // Special case for admin user (for backward compatibility)
-        // This is a fallback in case the database admin user doesn't work
-        if (email === 'admin@beyondfire.cloud' && password === 'AdminPW!') {
-          try {
-            // Try to find the admin user in the database
-            const User = mongoose.model('User');
-            const adminUser = await User.findOne({ email: 'admin@beyondfire.cloud' });
-
-            if (!adminUser) {
-              // If admin user doesn't exist in the database, create a temporary token
-              const token = 'test-token-' + Date.now();
-
-              logger.info('Login successful (hardcoded admin fallback)', { email, clientIp, xForwardedFor });
-
-              return res.json({
-                message: 'Login successful',
-                user: {
-                  email,
-                  name: 'Admin',
-                  role: 'admin'
-                },
-                accessToken: token
-              });
-            }
-            // If admin user exists, continue with normal authentication flow
-          } catch (error) {
-            // If there's an error accessing the database, use the fallback
-            const token = 'test-token-' + Date.now();
-
-            logger.info('Login successful (hardcoded admin fallback - DB error)', { email, clientIp, xForwardedFor });
-
-            return res.json({
-              message: 'Login successful',
-              user: {
-                email,
-                name: 'Admin',
-                role: 'admin'
-              },
-              accessToken: token
-            });
-          }
-        }
+        // No special case for admin user anymore
+        // All users must be authenticated through the database
 
         // Use the auth service for login
         const authService = require('./services/auth.service');
@@ -373,34 +333,6 @@ try {
     // Direct login test route
     const loginTestRoutes = require('./routes/login-test');
     app.use('/login-test', loginTestRoutes);
-
-    // Temporary route to check admin user
-    app.get('/api/check-admin', async (req, res) => {
-      try {
-        // Find admin user
-        const User = mongoose.model('User');
-        const adminUser = await User.findOne({ email: 'admin@beyondfire.cloud' });
-
-        if (!adminUser) {
-          return res.status(404).json({ error: 'Admin user not found' });
-        }
-
-        // Return admin user info (without sensitive data)
-        const adminInfo = {
-          id: adminUser._id,
-          email: adminUser.email,
-          name: adminUser.name,
-          role: adminUser.role,
-          permissions: adminUser.permissions,
-          createdAt: adminUser.createdAt
-        };
-
-        res.json({ adminUser: adminInfo });
-      } catch (error) {
-        logger.error('Check admin error:', error);
-        res.status(500).json({ error: 'Failed to check admin user' });
-      }
-    });
 
     // API 404 handler - MUST be defined AFTER routes
     app.use('/api/*', (req, res) => {
