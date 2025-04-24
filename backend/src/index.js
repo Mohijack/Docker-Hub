@@ -98,6 +98,16 @@ try {
     // API Routes
     app.use('/api', routes);
 
+    // Direct login test route
+    const loginTestRoutes = require('./routes/login-test');
+    app.use('/login-test', loginTestRoutes);
+
+    // API 404 handler
+    app.use('/api/*', (req, res) => {
+      logger.warn(`API route not found: ${req.method} ${req.originalUrl}`);
+      res.status(404).json({ error: 'API endpoint not found' });
+    });
+
     // Serve static frontend files
     app.use(express.static(path.join(__dirname, '../../frontend/build')));
 

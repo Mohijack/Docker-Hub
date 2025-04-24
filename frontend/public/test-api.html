@@ -121,7 +121,23 @@
     </div>
 
     <div class="test-section">
-        <h2>5. Direct API Test</h2>
+        <h2>5. Login Test Route</h2>
+        <p>This test uses a simplified login route for testing.</p>
+        <button id="loginTestRoute">Test Login Route</button>
+        <div class="header-section">
+            <h3>Request Headers:</h3>
+            <div id="loginTestRouteRequestHeaders" class="header-value">Not sent yet</div>
+        </div>
+        <div class="header-section">
+            <h3>Response Headers:</h3>
+            <div id="loginTestRouteResponseHeaders" class="header-value">Not received yet</div>
+        </div>
+        <h3>Response Body:</h3>
+        <pre id="loginTestRouteResult">Results will appear here...</pre>
+    </div>
+
+    <div class="test-section">
+        <h2>6. Direct API Test</h2>
         <p>This test bypasses Nginx and calls the API directly (only works if API is exposed).</p>
         <button id="directApiTest">Test Direct API</button>
         <div class="header-section">
@@ -319,6 +335,57 @@
             }
         });
 
+        // Login Test Route
+        document.getElementById('loginTestRoute').addEventListener('click', async () => {
+            const resultElement = document.getElementById('loginTestRouteResult');
+            const requestHeadersElement = document.getElementById('loginTestRouteRequestHeaders');
+            const responseHeadersElement = document.getElementById('loginTestRouteResponseHeaders');
+
+            resultElement.textContent = 'Testing...';
+            requestHeadersElement.textContent = 'Sending request...';
+            responseHeadersElement.textContent = 'Waiting for response...';
+
+            try {
+                // Create request headers
+                const headers = new Headers();
+                headers.append('Content-Type', 'application/json');
+                headers.append('Accept', 'application/json');
+
+                // Create request body
+                const body = JSON.stringify({
+                    email: 'admin@beyondfire.cloud',
+                    password: 'AdminPW!'
+                });
+
+                // Display request headers
+                requestHeadersElement.textContent = formatHeaders(headers) + '\n\nBody: ' + body;
+
+                // Send request to the login test route
+                const response = await fetch('/login-test/login', {
+                    method: 'POST',
+                    headers: headers,
+                    body: body,
+                    cache: 'no-cache'
+                });
+
+                // Display response headers
+                responseHeadersElement.textContent = formatHeaders(response.headers);
+
+                // Display response body
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    const data = await response.json();
+                    resultElement.textContent = `Status: ${response.status}\nData: ${JSON.stringify(data, null, 2)}`;
+                } else {
+                    const text = await response.text();
+                    resultElement.textContent = `Status: ${response.status}\nResponse: ${text}`;
+                }
+            } catch (error) {
+                resultElement.textContent = `Error: ${error.message}`;
+                responseHeadersElement.textContent = 'Error occurred';
+            }
+        });
+
         // Direct API Test
         document.getElementById('directApiTest').addEventListener('click', async () => {
             const resultElement = document.getElementById('directResult');
@@ -344,9 +411,9 @@
                 // Display request headers
                 requestHeadersElement.textContent = formatHeaders(headers) + '\n\nBody: ' + body;
 
-                // Try the test API on port 3001 first
+                // Try the login test route directly
                 try {
-                    const testResponse = await fetch('http://192.168.200.170:3001/login', {
+                    const testResponse = await fetch('http://192.168.200.170:3000/login-test/login', {
                         method: 'POST',
                         headers: headers,
                         body: body,
@@ -360,11 +427,11 @@
                     const contentType = testResponse.headers.get('content-type');
                     if (contentType && contentType.includes('application/json')) {
                         const data = await testResponse.json();
-                        resultElement.textContent = `Status: ${testResponse.status}\nData: ${JSON.stringify(data, null, 2)}\n\nUsing test API on port 3001`;
+                        resultElement.textContent = `Status: ${testResponse.status}\nData: ${JSON.stringify(data, null, 2)}\n\nUsing login test route directly`;
                         return;
                     }
                 } catch (testError) {
-                    console.log('Test API not available:', testError);
+                    console.log('Login test route not available:', testError);
                     // Continue with the regular API
                 }
 
