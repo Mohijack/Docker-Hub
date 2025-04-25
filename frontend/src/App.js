@@ -21,17 +21,24 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [setupRequired, setSetupRequired] = useState(false);
 
+  // Function to check if setup is required
+  const checkSetupRequired = async () => {
+    try {
+      const setupResponse = await api.get('/api/setup/status');
+      setSetupRequired(setupResponse.data.setupRequired);
+      return setupResponse.data.setupRequired;
+    } catch (error) {
+      console.error('Failed to check setup status:', error);
+      // If we can't check setup status, assume it's not required
+      setSetupRequired(false);
+      return false;
+    }
+  };
+
   useEffect(() => {
     const initApp = async () => {
-      try {
-        // Check if setup is required
-        const setupResponse = await api.get('/api/setup/status');
-        setSetupRequired(setupResponse.data.setupRequired);
-      } catch (error) {
-        console.error('Failed to check setup status:', error);
-        // If we can't check setup status, assume it's not required
-        setSetupRequired(false);
-      }
+      // Check if setup is required
+      await checkSetupRequired();
 
       // Check if user is logged in
       const storedUser = getCurrentUser();
@@ -45,6 +52,9 @@ function App() {
 
     initApp();
   }, []);
+
+  // Make checkSetupRequired available to child components
+  window.checkSetupRequired = checkSetupRequired;
 
   const handleLogin = (userData) => {
     setUser(userData);

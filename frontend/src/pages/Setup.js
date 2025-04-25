@@ -144,6 +144,11 @@ const Setup = () => {
 
       setSuccess('Setup completed successfully! Redirecting to login...');
 
+      // Update setupRequired state in parent component
+      if (window.checkSetupRequired) {
+        await window.checkSetupRequired();
+      }
+
       // Redirect to login after a short delay
       setTimeout(() => {
         navigate('/login');
