@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import AdminDashboard from './AdminDashboard';
 import UserManagement from './UserManagement';
 import LogViewer from './LogViewer';
+import ServiceManagement from './ServiceManagement';
 import './AdminPanel.css';
 
 function AdminPanel({ user }) {
@@ -30,6 +31,8 @@ function AdminPanel({ user }) {
         return <AdminDashboard />;
       case 'users':
         return <UserManagement />;
+      case 'services':
+        return <ServiceManagement />;
       case 'logs':
         return <LogViewer />;
       default:
@@ -51,21 +54,28 @@ function AdminPanel({ user }) {
       {error && <div className="error-message">{error}</div>}
 
       <div className="admin-tabs">
-        <button 
+        <button
           className={`tab-button ${activeTab === 'dashboard' ? 'active' : ''}`}
           onClick={() => setActiveTab('dashboard')}
         >
           <i className="tab-icon dashboard-icon"></i>
           Dashboard
         </button>
-        <button 
+        <button
           className={`tab-button ${activeTab === 'users' ? 'active' : ''}`}
           onClick={() => setActiveTab('users')}
         >
           <i className="tab-icon users-icon"></i>
           Benutzerverwaltung
         </button>
-        <button 
+        <button
+          className={`tab-button ${activeTab === 'services' ? 'active' : ''}`}
+          onClick={() => setActiveTab('services')}
+        >
+          <i className="tab-icon services-icon"></i>
+          Dienstverwaltung
+        </button>
+        <button
           className={`tab-button ${activeTab === 'logs' ? 'active' : ''}`}
           onClick={() => setActiveTab('logs')}
         >

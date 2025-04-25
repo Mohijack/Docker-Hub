@@ -1,0 +1,127 @@
+.service-management {
+  padding: 20px;
+}
+
+.service-management-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+/* Dark mode styles */
+[data-theme="dark"] .MuiTableHead-root .MuiTableCell-root {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #fff;
+}
+
+[data-theme="dark"] .MuiTableBody-root .MuiTableRow-root:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .MuiPaper-root {
+  background-color: #1e1e1e;
+  color: #fff;
+}
+
+[data-theme="dark"] .MuiDialog-paper {
+  background-color: #1e1e1e;
+  color: #fff;
+}
+
+[data-theme="dark"] .MuiInputBase-root {
+  color: #fff;
+}
+
+[data-theme="dark"] .MuiInputLabel-root {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+[data-theme="dark"] .MuiOutlinedInput-notchedOutline {
+  border-color: rgba(255, 255, 255, 0.23);
+}
+
+[data-theme="dark"] .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+[data-theme="dark"] .MuiSelect-icon {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Futuristic design elements */
+.service-management .MuiButton-contained {
+  background: linear-gradient(45deg, #2196f3, #21cbf3);
+  box-shadow: 0 4px 20px rgba(33, 150, 243, 0.4);
+  transition: all 0.3s ease;
+}
+
+.service-management .MuiButton-contained:hover {
+  background: linear-gradient(45deg, #21cbf3, #2196f3);
+  box-shadow: 0 6px 25px rgba(33, 150, 243, 0.6);
+  transform: translateY(-2px);
+}
+
+.service-management .MuiPaper-root {
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.service-management .MuiTableContainer-root {
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.service-management .MuiTableHead-root .MuiTableCell-root {
+  font-weight: 600;
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+.service-management .MuiTableBody-root .MuiTableRow-root {
+  transition: background-color 0.2s ease;
+}
+
+.service-management .MuiTableBody-root .MuiTableRow-root:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.service-management .MuiIconButton-root {
+  transition: transform 0.2s ease;
+}
+
+.service-management .MuiIconButton-root:hover {
+  transform: scale(1.1);
+}
+
+/* Dark mode futuristic design */
+[data-theme="dark"] .service-management .MuiButton-contained {
+  background: linear-gradient(45deg, #2979ff, #00b0ff);
+  box-shadow: 0 4px 20px rgba(41, 121, 255, 0.4);
+}
+
+[data-theme="dark"] .service-management .MuiButton-contained:hover {
+  background: linear-gradient(45deg, #00b0ff, #2979ff);
+  box-shadow: 0 6px 25px rgba(41, 121, 255, 0.6);
+}
+
+[data-theme="dark"] .service-management .MuiPaper-root {
+  background-color: #1e1e1e;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .service-management .MuiTableContainer-root {
+  background-color: #1e1e1e;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .service-management .MuiTableHead-root .MuiTableCell-root {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #fff;
+}
+
+[data-theme="dark"] .service-management .MuiTableBody-root .MuiTableRow-root:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}

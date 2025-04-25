@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const { User, Booking, Service } = require('../models/mongoose');
 const {
   authenticateToken,
@@ -403,6 +404,43 @@ router.put('/services/:id', authenticateToken, requireAdmin, async (req, res) =>
   } catch (error) {
     logger.error('Admin update service error:', error);
     res.status(500).json({ error: 'Failed to update service' });
+  }
+});
+
+/**
+ * @route   DELETE /api/admin/services/:id
+ * @desc    Delete a service
+ * @access  Admin
+ */
+router.delete('/services/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const service = await Service.findOne({ id: req.params.id });
+
+    if (!service) {
+      return res.status(404).json({ error: 'Service not found' });
+    }
+
+    // Check if service is in use
+    const bookings = await Booking.find({ serviceId: service.id });
+
+    if (bookings.length > 0) {
+      return res.status(400).json({
+        error: 'Cannot delete service that is in use',
+        message: `This service is currently used by ${bookings.length} booking(s). Please delete all bookings for this service first.`
+      });
+    }
+
+    // Delete service
+    await Service.findByIdAndDelete(service._id);
+
+    logger.info(`Service ${service.id} deleted by admin ${req.user.email}`);
+
+    res.json({
+      message: 'Service deleted successfully'
+    });
+  } catch (error) {
+    logger.error('Admin delete service error:', error);
+    res.status(500).json({ error: 'Failed to delete service' });
   }
 });
 
