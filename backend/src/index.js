@@ -326,6 +326,10 @@ try {
     const cookieParser = require('cookie-parser');
     app.use(cookieParser());
 
+    // Setup middleware - must be added before routes
+    const { setupRequired } = require('./middleware/setup.middleware');
+    app.use(setupRequired);
+
     // User routes
     const userRoutes = require('./routes/user.routes');
     app.use('/api/users', userRoutes);
@@ -337,6 +341,10 @@ try {
     // Direct login test route
     const loginTestRoutes = require('./routes/login-test');
     app.use('/login-test', loginTestRoutes);
+
+    // Setup routes
+    const setupRoutes = require('./routes/setup.routes');
+    app.use('/api/setup', setupRoutes);
 
     // Temporary route to check admin user
     app.get('/api/check-admin', async (req, res) => {

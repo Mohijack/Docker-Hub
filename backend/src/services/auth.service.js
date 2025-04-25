@@ -23,19 +23,19 @@ class AuthService {
   async register(userData) {
     try {
       const { email, password, name, company } = userData;
-      
+
       // Check if user already exists
       const existingUser = await User.findOne({ email });
       if (existingUser) {
         return { success: false, message: 'User already exists' };
       }
-      
+
       // Validate password
       const passwordValidation = User.validatePassword(password);
       if (!passwordValidation.valid) {
         return { success: false, message: passwordValidation.message };
       }
-      
+
       // Create new user
       const user = new User({
         email,
@@ -44,21 +44,21 @@ class AuthService {
         company: company || '',
         role: 'user'
       });
-      
+
       // Save user
       await user.save();
-      
+
       // Return user without sensitive data
       const userObject = user.toObject();
       delete userObject.password;
-      
+
       return { success: true, user: userObject };
     } catch (error) {
       logger.error('Registration error:', error);
       return { success: false, message: 'Registration failed' };
     }
   }
-  
+
   /**
    * Login user
    */
@@ -66,30 +66,30 @@ class AuthService {
     try {
       // Find user with password included
       const user = await User.findOne({ email }).select('+password');
-      
+
       if (!user) {
         return { success: false, message: 'Invalid credentials' };
       }
-      
+
       // Check if account is locked
       if (user.accountLocked && user.accountLockedUntil > Date.now()) {
-        return { 
-          success: false, 
-          message: `Account is locked. Please try again after ${new Date(user.accountLockedUntil).toLocaleString()}` 
+        return {
+          success: false,
+          message: `Account is locked. Please try again after ${new Date(user.accountLockedUntil).toLocaleString()}`
         };
       }
-      
+
       // Verify password
       const isMatch = await user.comparePassword(password);
-      
+
       // Record login attempt
       user.recordLoginAttempt(isMatch, ipAddress, userAgent);
       await user.save();
-      
+
       if (!isMatch) {
         return { success: false, message: 'Invalid credentials' };
       }
-      
+
       // Check if 2FA is enabled
       if (user.twoFactorAuth.enabled) {
         // Generate a temporary token for 2FA verification
@@ -98,17 +98,17 @@ class AuthService {
           config.jwt.secret,
           { expiresIn: '5m' }
         );
-        
-        return { 
-          success: true, 
+
+        return {
+          success: true,
           require2FA: true,
           tempToken
         };
       }
-      
+
       // Generate tokens
       const { accessToken, refreshToken, refreshTokenExpiry } = this.generateTokens(user);
-      
+
       // Add refresh token to user
       user.addRefreshToken(
         refreshToken,
@@ -116,18 +116,18 @@ class AuthService {
         userAgent,
         ipAddress
       );
-      
+
       // Save user
       await user.save();
-      
+
       // Return user without sensitive data
       const userObject = user.toObject();
       delete userObject.password;
       delete userObject.refreshTokens;
-      
-      return { 
-        success: true, 
-        user: userObject, 
+
+      return {
+        success: true,
+        user: userObject,
         accessToken,
         refreshToken
       };
@@ -136,7 +136,7 @@ class AuthService {
       return { success: false, message: 'Login failed' };
     }
   }
-  
+
   /**
    * Verify 2FA token
    */
@@ -144,40 +144,40 @@ class AuthService {
     try {
       // Verify temp token
       const decoded = jwt.verify(tempToken, config.jwt.secret);
-      
+
       if (!decoded.require2FA) {
         return { success: false, message: 'Invalid token' };
       }
-      
+
       // Find user with 2FA secret
       const user = await User.findById(decoded.id).select('+twoFactorAuth.secret +twoFactorAuth.backupCodes');
-      
+
       if (!user) {
         return { success: false, message: 'User not found' };
       }
-      
+
       // Verify TOTP token
       const isValid = authenticator.verify({
         token: totpToken,
         secret: user.twoFactorAuth.secret
       });
-      
+
       if (!isValid) {
         // Check if it's a backup code
         const hashedToken = crypto.createHash('sha256').update(totpToken).digest('hex');
         const backupCodeIndex = user.twoFactorAuth.backupCodes.indexOf(hashedToken);
-        
+
         if (backupCodeIndex === -1) {
           return { success: false, message: 'Invalid 2FA token' };
         }
-        
+
         // Remove used backup code
         user.twoFactorAuth.backupCodes.splice(backupCodeIndex, 1);
       }
-      
+
       // Generate tokens
       const { accessToken, refreshToken, refreshTokenExpiry } = this.generateTokens(user);
-      
+
       // Add refresh token to user
       user.addRefreshToken(
         refreshToken,
@@ -185,20 +185,20 @@ class AuthService {
         'Unknown', // We don't have this info in the 2FA flow
         'Unknown'
       );
-      
+
       // Save user
       await user.save();
-      
+
       // Return user without sensitive data
       const userObject = user.toObject();
       delete userObject.password;
       delete userObject.refreshTokens;
       delete userObject.twoFactorAuth.secret;
       delete userObject.twoFactorAuth.backupCodes;
-      
-      return { 
-        success: true, 
-        user: userObject, 
+
+      return {
+        success: true,
+        user: userObject,
         accessToken,
         refreshToken
       };
@@ -207,7 +207,7 @@ class AuthService {
       return { success: false, message: '2FA verification failed' };
     }
   }
-  
+
   /**
    * Refresh access token
    */
@@ -218,17 +218,17 @@ class AuthService {
         'refreshTokens.token': refreshToken,
         'refreshTokens.expires': { $gt: new Date() }
       });
-      
+
       if (!user) {
         return { success: false, message: 'Invalid refresh token' };
       }
-      
+
       // Remove the used refresh token (token rotation)
       user.removeRefreshToken(refreshToken);
-      
+
       // Generate new tokens
       const { accessToken, refreshToken: newRefreshToken, refreshTokenExpiry } = this.generateTokens(user);
-      
+
       // Add new refresh token to user
       user.addRefreshToken(
         newRefreshToken,
@@ -236,12 +236,12 @@ class AuthService {
         userAgent,
         ipAddress
       );
-      
+
       // Save user
       await user.save();
-      
-      return { 
-        success: true, 
+
+      return {
+        success: true,
         accessToken,
         refreshToken: newRefreshToken
       };
@@ -250,7 +250,7 @@ class AuthService {
       return { success: false, message: 'Token refresh failed' };
     }
   }
-  
+
   /**
    * Logout user
    */
@@ -260,24 +260,24 @@ class AuthService {
       const user = await User.findOne({
         'refreshTokens.token': refreshToken
       });
-      
+
       if (!user) {
         return { success: true, message: 'Logged out' };
       }
-      
+
       // Remove the refresh token
       user.removeRefreshToken(refreshToken);
-      
+
       // Save user
       await user.save();
-      
+
       return { success: true, message: 'Logged out' };
     } catch (error) {
       logger.error('Logout error:', error);
       return { success: false, message: 'Logout failed' };
     }
   }
-  
+
   /**
    * Setup 2FA
    */
@@ -285,24 +285,24 @@ class AuthService {
     try {
       // Find user
       const user = await User.findById(userId);
-      
+
       if (!user) {
         return { success: false, message: 'User not found' };
       }
-      
+
       // Generate secret
       const secret = authenticator.generateSecret();
-      
+
       // Generate QR code
       const otpauth = authenticator.keyuri(user.email, 'BeyondFire Cloud', secret);
       const qrCode = await QRCode.toDataURL(otpauth);
-      
+
       // Store secret temporarily (not enabled yet)
       user.twoFactorAuth.secret = secret;
       await user.save();
-      
-      return { 
-        success: true, 
+
+      return {
+        success: true,
         secret,
         qrCode
       };
@@ -311,7 +311,7 @@ class AuthService {
       return { success: false, message: '2FA setup failed' };
     }
   }
-  
+
   /**
    * Verify and enable 2FA
    */
@@ -319,30 +319,30 @@ class AuthService {
     try {
       // Find user with 2FA secret
       const user = await User.findById(userId).select('+twoFactorAuth.secret');
-      
+
       if (!user) {
         return { success: false, message: 'User not found' };
       }
-      
+
       // Verify token
       const isValid = authenticator.verify({
         token,
         secret: user.twoFactorAuth.secret
       });
-      
+
       if (!isValid) {
         return { success: false, message: 'Invalid token' };
       }
-      
+
       // Generate backup codes
       const backupCodes = user.generateBackupCodes();
-      
+
       // Enable 2FA
       user.twoFactorAuth.enabled = true;
       await user.save();
-      
-      return { 
-        success: true, 
+
+      return {
+        success: true,
         backupCodes
       };
     } catch (error) {
@@ -350,7 +350,7 @@ class AuthService {
       return { success: false, message: '2FA enable failed' };
     }
   }
-  
+
   /**
    * Disable 2FA
    */
@@ -358,40 +358,40 @@ class AuthService {
     try {
       // Find user with 2FA secret
       const user = await User.findById(userId).select('+twoFactorAuth.secret +twoFactorAuth.backupCodes');
-      
+
       if (!user) {
         return { success: false, message: 'User not found' };
       }
-      
+
       // Verify token
       const isValid = authenticator.verify({
         token,
         secret: user.twoFactorAuth.secret
       });
-      
+
       if (!isValid) {
         // Check if it's a backup code
         const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
         const backupCodeIndex = user.twoFactorAuth.backupCodes.indexOf(hashedToken);
-        
+
         if (backupCodeIndex === -1) {
           return { success: false, message: 'Invalid token' };
         }
       }
-      
+
       // Disable 2FA
       user.twoFactorAuth.enabled = false;
       user.twoFactorAuth.secret = undefined;
       user.twoFactorAuth.backupCodes = [];
       await user.save();
-      
+
       return { success: true };
     } catch (error) {
       logger.error('2FA disable error:', error);
       return { success: false, message: '2FA disable failed' };
     }
   }
-  
+
   /**
    * Request password reset
    */
@@ -399,20 +399,20 @@ class AuthService {
     try {
       // Find user
       const user = await User.findOne({ email });
-      
+
       if (!user) {
         // Don't reveal that the user doesn't exist
         return { success: true, message: 'If your email is registered, you will receive a password reset link' };
       }
-      
+
       // Generate reset token
       const resetToken = user.generatePasswordResetToken();
       await user.save();
-      
+
       // In a real application, send an email with the reset link
       // For this demo, we'll just return the token
-      return { 
-        success: true, 
+      return {
+        success: true,
         message: 'If your email is registered, you will receive a password reset link',
         resetToken // This would normally be sent via email
       };
@@ -421,7 +421,7 @@ class AuthService {
       return { success: false, message: 'Password reset request failed' };
     }
   }
-  
+
   /**
    * Reset password
    */
@@ -432,42 +432,42 @@ class AuthService {
         .createHash('sha256')
         .update(resetToken)
         .digest('hex');
-      
+
       // Find user with this token
       const user = await User.findOne({
         'passwordReset.token': hashedToken,
         'passwordReset.expires': { $gt: Date.now() }
       });
-      
+
       if (!user) {
         return { success: false, message: 'Invalid or expired reset token' };
       }
-      
+
       // Validate password
       const passwordValidation = User.validatePassword(newPassword);
       if (!passwordValidation.valid) {
         return { success: false, message: passwordValidation.message };
       }
-      
+
       // Update password
       user.password = newPassword;
-      
+
       // Clear reset token
       user.passwordReset.token = undefined;
       user.passwordReset.expires = undefined;
-      
+
       // Invalidate all refresh tokens
       user.refreshTokens = [];
-      
+
       await user.save();
-      
+
       return { success: true, message: 'Password reset successful' };
     } catch (error) {
       logger.error('Password reset error:', error);
       return { success: false, message: 'Password reset failed' };
     }
   }
-  
+
   /**
    * Change password
    */
@@ -475,39 +475,39 @@ class AuthService {
     try {
       // Find user with password
       const user = await User.findById(userId).select('+password');
-      
+
       if (!user) {
         return { success: false, message: 'User not found' };
       }
-      
+
       // Verify current password
       const isMatch = await user.comparePassword(currentPassword);
-      
+
       if (!isMatch) {
         return { success: false, message: 'Current password is incorrect' };
       }
-      
+
       // Validate new password
       const passwordValidation = User.validatePassword(newPassword);
       if (!passwordValidation.valid) {
         return { success: false, message: passwordValidation.message };
       }
-      
+
       // Update password
       user.password = newPassword;
-      
+
       // Invalidate all refresh tokens except the current one
       // This would require passing the current refresh token to this method
-      
+
       await user.save();
-      
+
       return { success: true, message: 'Password changed successfully' };
     } catch (error) {
       logger.error('Password change error:', error);
       return { success: false, message: 'Password change failed' };
     }
   }
-  
+
   /**
    * Generate access and refresh tokens
    */
@@ -522,14 +522,82 @@ class AuthService {
       config.jwt.secret,
       { expiresIn: config.jwt.expiresIn }
     );
-    
+
     // Generate refresh token
     const refreshToken = uuidv4();
-    
+
     // Calculate refresh token expiry
     const refreshTokenExpiry = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days
-    
+
     return { accessToken, refreshToken, refreshTokenExpiry };
+  }
+
+  /**
+   * Check if any users exist in the database
+   */
+  async checkUsersExist() {
+    try {
+      const count = await User.countDocuments();
+      return { success: true, usersExist: count > 0, count };
+    } catch (error) {
+      logger.error('Check users exist error:', error);
+      return { success: false, message: 'Failed to check if users exist' };
+    }
+  }
+
+  /**
+   * Setup initial admin user
+   */
+  async setupInitialAdmin(userData) {
+    try {
+      // Check if any users already exist
+      const { usersExist } = await this.checkUsersExist();
+
+      if (usersExist) {
+        return { success: false, message: 'Setup has already been completed' };
+      }
+
+      const { email, password, name, company } = userData;
+
+      // Validate password
+      const passwordValidation = User.validatePassword(password);
+      if (!passwordValidation.valid) {
+        return { success: false, message: passwordValidation.message };
+      }
+
+      // Create admin user
+      const adminUser = new User({
+        email,
+        password,
+        name,
+        company: company || '',
+        role: 'admin',
+        permissions: [
+          // User permissions
+          'user:read', 'user:create', 'user:update', 'user:delete',
+          // Service permissions
+          'service:read', 'service:create', 'service:update', 'service:delete',
+          // Booking permissions
+          'booking:read', 'booking:create', 'booking:update', 'booking:delete',
+          // Admin permissions
+          'admin:access', 'admin:logs', 'admin:settings'
+        ]
+      });
+
+      // Save admin user
+      await adminUser.save();
+
+      logger.info('Initial admin user created successfully');
+
+      // Return user without sensitive data
+      const userObject = adminUser.toObject();
+      delete userObject.password;
+
+      return { success: true, user: userObject };
+    } catch (error) {
+      logger.error('Setup initial admin error:', error);
+      return { success: false, message: 'Failed to setup initial admin user' };
+    }
   }
 }
 
