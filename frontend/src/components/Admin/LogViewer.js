@@ -56,7 +56,15 @@ function LogViewer() {
       }
 
       const data = await response.json();
-      setServices(data.services);
+
+      // Check if services exist in the response
+      if (!data || !Array.isArray(data)) {
+        // If no services found, use an empty array
+        setServices([]);
+        return;
+      }
+
+      setServices(data);
     } catch (error) {
       console.error('Error fetching services:', error);
     }

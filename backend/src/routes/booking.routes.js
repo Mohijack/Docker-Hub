@@ -13,7 +13,7 @@ const { logger } = require('../utils/logger');
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const bookings = await Booking.find({ userId: req.user._id });
-    res.json(bookings);
+    res.json({ bookings });
   } catch (error) {
     logger.error('Get bookings error:', error);
     res.status(500).json({ error: 'Failed to get bookings' });
@@ -28,23 +28,23 @@ router.get('/', authenticateToken, async (req, res) => {
 router.post('/', authenticateToken, async (req, res) => {
   try {
     const { serviceId, customName, customDomain, licenseInfo } = req.body;
-    
+
     // Validate input
     if (!serviceId) {
       return res.status(400).json({ error: 'Service ID is required' });
     }
-    
+
     if (!customName) {
       return res.status(400).json({ error: 'Custom name is required' });
     }
-    
+
     // Check if service exists
     const service = await Service.findOne({ id: serviceId, active: true });
-    
+
     if (!service) {
       return res.status(404).json({ error: 'Service not found' });
     }
-    
+
     // Generate a unique subdomain if not provided
     let subdomain = customDomain;
     if (!subdomain) {
@@ -52,18 +52,18 @@ router.post('/', authenticateToken, async (req, res) => {
       const randomString = Math.random().toString(36).substring(2, 8);
       subdomain = `${serviceId}-${randomString}`;
     }
-    
+
     // Check if domain is already in use
     const domain = `${subdomain}.beyondfire.cloud`;
     const domainExists = await Booking.findOne({ domain });
-    
+
     if (domainExists) {
       return res.status(400).json({ error: 'Domain is already in use' });
     }
-    
+
     // Generate a unique port number between 10000 and 20000
     const port = Math.floor(Math.random() * 10000) + 10000;
-    
+
     // Create booking
     const booking = new Booking({
       userId: req.user._id,
@@ -84,10 +84,10 @@ router.post('/', authenticateToken, async (req, res) => {
         level: 'info'
       }]
     });
-    
+
     // Save booking
     await booking.save();
-    
+
     // Add service to user
     req.user.services.push({
       id: booking._id,
@@ -97,9 +97,9 @@ router.post('/', authenticateToken, async (req, res) => {
       status: 'pending',
       createdAt: booking.createdAt
     });
-    
+
     await req.user.save();
-    
+
     res.status(201).json({
       message: 'Service booked successfully',
       booking
@@ -121,11 +121,11 @@ router.get('/:id', authenticateToken, async (req, res) => {
       _id: req.params.id,
       userId: req.user._id
     });
-    
+
     if (!booking) {
       return res.status(404).json({ error: 'Booking not found' });
     }
-    
+
     res.json(booking);
   } catch (error) {
     logger.error('Get booking error:', error);
@@ -144,21 +144,21 @@ router.post('/:id/deploy', authenticateToken, async (req, res) => {
       _id: req.params.id,
       userId: req.user._id
     });
-    
+
     if (!booking) {
       return res.status(404).json({ error: 'Booking not found' });
     }
-    
+
     // Check if booking is already deployed
     if (booking.status === 'active') {
       return res.status(400).json({ error: 'Service is already deployed' });
     }
-    
+
     // Update booking status
     booking.status = 'deploying';
     booking.addDeploymentLog('Deployment started', 'info');
     await booking.save();
-    
+
     // Deploy service (this will be handled asynchronously)
     deploymentService.deployService(booking._id)
       .then(result => {
@@ -167,7 +167,7 @@ router.post('/:id/deploy', authenticateToken, async (req, res) => {
       .catch(error => {
         logger.error(`Deployment error for booking ${booking._id}:`, error);
       });
-    
+
     res.json({
       message: 'Deployment started',
       booking
@@ -189,30 +189,30 @@ router.delete('/:id', authenticateToken, async (req, res) => {
       _id: req.params.id,
       userId: req.user._id
     });
-    
+
     if (!booking) {
       return res.status(404).json({ error: 'Booking not found' });
     }
-    
+
     // Check if booking is active
     if (booking.status === 'active') {
       // Stop the service first
       const result = await deploymentService.stopService(booking._id);
-      
+
       if (!result.success) {
         return res.status(400).json({ error: 'Failed to stop service' });
       }
     }
-    
+
     // Update booking status
     booking.status = 'deleted';
     booking.addDeploymentLog('Booking deleted', 'info');
     await booking.save();
-    
+
     // Remove service from user
     req.user.services = req.user.services.filter(service => service.id.toString() !== booking._id.toString());
     await req.user.save();
-    
+
     res.json({
       message: 'Booking deleted successfully'
     });

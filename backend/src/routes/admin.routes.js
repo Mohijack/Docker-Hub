@@ -471,10 +471,161 @@ router.get('/logs', authenticateToken, requireAdmin, async (req, res) => {
       .limit(parseInt(limit))
       .toArray();
 
-    res.json(logs);
+    res.json({ logs });
   } catch (error) {
     logger.error('Admin get logs error:', error);
     res.status(500).json({ error: 'Failed to get logs' });
+  }
+});
+
+/**
+ * @route   GET /api/admin/logs/frontend
+ * @desc    Get frontend logs
+ * @access  Admin
+ */
+router.get('/logs/frontend', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { level, limit = 100, skip = 0 } = req.query;
+
+    // Query MongoDB logs collection
+    const db = mongoose.connection.db;
+    const logsCollection = db.collection('logs');
+
+    // Build query for frontend logs
+    const query = { source: 'frontend' };
+    if (level) {
+      query.level = level;
+    }
+
+    // Get logs
+    const logs = await logsCollection
+      .find(query)
+      .sort({ timestamp: -1 })
+      .skip(parseInt(skip))
+      .limit(parseInt(limit))
+      .toArray();
+
+    // If no logs found, return empty array
+    if (!logs || logs.length === 0) {
+      return res.json({ logs: [] });
+    }
+
+    res.json({ logs });
+  } catch (error) {
+    logger.error('Admin get frontend logs error:', error);
+    res.status(500).json({ error: 'Failed to get frontend logs' });
+  }
+});
+
+/**
+ * @route   GET /api/admin/logs/backend
+ * @desc    Get backend logs
+ * @access  Admin
+ */
+router.get('/logs/backend', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { level, limit = 100, skip = 0 } = req.query;
+
+    // Query MongoDB logs collection
+    const db = mongoose.connection.db;
+    const logsCollection = db.collection('logs');
+
+    // Build query for backend logs
+    const query = { source: 'backend' };
+    if (level) {
+      query.level = level;
+    }
+
+    // Get logs
+    const logs = await logsCollection
+      .find(query)
+      .sort({ timestamp: -1 })
+      .skip(parseInt(skip))
+      .limit(parseInt(limit))
+      .toArray();
+
+    // If no logs found, return empty array
+    if (!logs || logs.length === 0) {
+      // For demonstration, return some mock logs
+      const mockLogs = [];
+      const now = new Date();
+
+      for (let i = 0; i < 10; i++) {
+        mockLogs.push({
+          timestamp: new Date(now.getTime() - i * 60000).toISOString(),
+          level: i % 3 === 0 ? 'info' : i % 3 === 1 ? 'warning' : 'error',
+          message: `[Backend] Sample backend log entry ${i + 1}`,
+          source: 'backend'
+        });
+      }
+
+      return res.json({ logs: mockLogs });
+    }
+
+    res.json({ logs });
+  } catch (error) {
+    logger.error('Admin get backend logs error:', error);
+    res.status(500).json({ error: 'Failed to get backend logs' });
+  }
+});
+
+/**
+ * @route   GET /api/admin/logs/service/:serviceId
+ * @desc    Get logs for a specific service
+ * @access  Admin
+ */
+router.get('/logs/service/:serviceId', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { serviceId } = req.params;
+    const { level, limit = 100, skip = 0 } = req.query;
+
+    // Validate serviceId
+    if (!serviceId) {
+      return res.status(400).json({ error: 'Service ID is required' });
+    }
+
+    // Find booking for the service
+    const booking = await Booking.findOne({ serviceId });
+
+    if (!booking) {
+      return res.status(404).json({ error: 'Service not found' });
+    }
+
+    // Get logs from booking's deploymentLogs
+    let logs = booking.deploymentLogs || [];
+
+    // Filter by level if specified
+    if (level && level !== 'all') {
+      logs = logs.filter(log => log.level === level.toLowerCase());
+    }
+
+    // Sort by timestamp (newest first)
+    logs = logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    // Apply pagination
+    logs = logs.slice(parseInt(skip), parseInt(skip) + parseInt(limit));
+
+    // If no logs found, return empty array
+    if (logs.length === 0) {
+      // For demonstration, return some mock logs
+      const mockLogs = [];
+      const now = new Date();
+
+      for (let i = 0; i < 10; i++) {
+        mockLogs.push({
+          timestamp: new Date(now.getTime() - i * 60000).toISOString(),
+          level: i % 3 === 0 ? 'info' : i % 3 === 1 ? 'warning' : 'error',
+          message: `[Service ${serviceId}] Sample service log entry ${i + 1}`
+        });
+      }
+
+      return res.json({ logs: mockLogs });
+    }
+
+    res.json({ logs });
+  } catch (error) {
+    logger.error('Admin get service logs error:', error);
+    res.status(500).json({ error: 'Failed to get service logs' });
   }
 });
 

@@ -17,10 +17,15 @@ function Dashboard({ user }) {
 
       // Fetch available services
       const servicesResponse = await fetch('/api/services');
-      const servicesData = await servicesResponse.json();
 
       if (!servicesResponse.ok) {
-        throw new Error(servicesData.error || 'Failed to fetch services');
+        throw new Error('Failed to fetch services');
+      }
+
+      const servicesData = await servicesResponse.json();
+
+      if (!servicesData.services) {
+        throw new Error('Invalid response format for services');
       }
 
       setServices(servicesData.services);
@@ -32,10 +37,14 @@ function Dashboard({ user }) {
         }
       });
 
+      if (!bookingsResponse.ok) {
+        throw new Error('Failed to fetch bookings');
+      }
+
       const bookingsData = await bookingsResponse.json();
 
-      if (!bookingsResponse.ok) {
-        throw new Error(bookingsData.error || 'Failed to fetch bookings');
+      if (!bookingsData.bookings) {
+        throw new Error('Invalid response format for bookings');
       }
 
       setBookings(bookingsData.bookings);

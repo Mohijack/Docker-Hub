@@ -330,13 +330,9 @@ try {
     const { setupRequired } = require('./middleware/setup.middleware');
     app.use(setupRequired);
 
-    // User routes
-    const userRoutes = require('./routes/user.routes');
-    app.use('/api/users', userRoutes);
-
-    // Admin routes
-    const adminRoutes = require('./routes/admin.routes');
-    app.use('/api/admin', adminRoutes);
+    // API routes
+    const apiRoutes = require('./routes/index');
+    app.use('/api', apiRoutes);
 
     // Direct login test route
     const loginTestRoutes = require('./routes/login-test');
